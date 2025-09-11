@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Camera, Home, User, Menu } from 'lucide-react';
+import { Camera, User, HardDrive, Menu } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { cn } from '@/lib/utils';
 import {
@@ -14,9 +14,9 @@ import { Button } from './ui/button';
 import { useState } from 'react';
 
 const navItems = [
-  { href: '/dashboard', label: 'Home', icon: Home },
+  { href: '/dashboard', label: 'My Card', icon: User },
   { href: '/dashboard/scan', label: 'Scan Card', icon: Camera },
-  { href: '/dashboard/profile', label: 'My Card', icon: User },
+  { href: '/dashboard/saved-cards', label: 'Saved Cards', icon: HardDrive },
 ];
 
 export default function Header() {
