@@ -1,3 +1,28 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "card1",
+      "description": "A business card for a tech company.",
+      "imageUrl": "https://picsum.photos/seed/card1/500/300",
+      "imageHint": "business card"
+    },
+    {
+      "id": "card2",
+      "description": "A business card for a marketing company.",
+      "imageUrl": "https://picsum.photos/seed/card2/500/300",
+      "imageHint": "business card"
+    },
+    {
+      "id": "card3",
+      "description": "A business card for a design studio.",
+      "imageUrl": "https://picsum.photos/seed/card3/500/300",
+      "imageHint": "business card"
+    },
+    {
+      "id": "useravatar",
+      "description": "A portrait of a person for their digital business card.",
+      "imageUrl": "https://picsum.photos/seed/useravatar/200/200",
+      "imageHint": "portrait person"
+    }
+  ]
 }
