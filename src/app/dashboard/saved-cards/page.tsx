@@ -8,6 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { mockBusinessCards } from '@/lib/mock-data';
 import type { BusinessCard } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
+import { Button } from '@/components/ui/button';
 
 // Helper function to group cards by company
 const groupCardsByCompany = (cards: BusinessCard[]) => {
