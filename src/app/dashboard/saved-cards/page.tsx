@@ -74,6 +74,18 @@ export default function SavedCardsPage() {
                           </p>
                         )}
                       </div>
+                      <div className="pt-2">
+                        <h4 className="font-semibold text-foreground mb-2">Company Location</h4>
+                        <div className="aspect-video rounded-md overflow-hidden border">
+                          <iframe
+                            width="100%"
+                            height="100%"
+                            loading="lazy"
+                            allowFullScreen
+                            src={`https://www.google.com/maps/embed/v1/place?q=${encodeURIComponent(card.address)}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}>
+                          </iframe>
+                        </div>
+                      </div>
                     </CardContent>
                     <CardFooter className="flex justify-between items-center text-xs text-muted-foreground bg-slate-50 p-3">
                        <div className="flex items-center gap-1">

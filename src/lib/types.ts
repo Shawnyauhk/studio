@@ -8,6 +8,7 @@ export type BusinessCard = {
   website?: string;
   notes: string;
   imageUrl: string;
+  address: string;
   companyInfo?: {
     description: string;
   };

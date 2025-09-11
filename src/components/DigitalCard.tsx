@@ -7,10 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { mockUserDigitalCard } from '@/lib/mock-data';
 import type { DigitalCardData } from '@/lib/types';
-import { Phone, Mail, Globe, MapPin, Edit, Check } from 'lucide-react';
+import { Phone, Mail, Globe, MapPin, Edit, Check, QrCode, Star, Download, Share2 } from 'lucide-react';
 
 function DigitalCardPreview({ cardData }: { cardData: DigitalCardData }) {
     return (
+      <div className="space-y-6">
         <div className="w-full max-w-sm mx-auto bg-card rounded-2xl shadow-2xl p-6 relative overflow-hidden">
             <div className="absolute -top-16 -right-16 w-48 h-48 bg-primary/20 rounded-full"></div>
             <div className="absolute -bottom-24 -left-12 w-48 h-48 bg-accent/10 rounded-full"></div>
@@ -49,10 +50,29 @@ function DigitalCardPreview({ cardData }: { cardData: DigitalCardData }) {
                         <span>{cardData.address}</span>
                     </div>
                 </div>
-
-                <Button className="mt-8 w-full">Share Card</Button>
             </div>
         </div>
+        
+        <div className="w-full max-w-sm mx-auto space-y-2">
+            <Button className="w-full justify-start" variant="outline"><QrCode className="mr-2"/> Show Website QR</Button>
+            <Button className="w-full justify-start" variant="outline"><Star className="mr-2"/> Add to Favorites</Button>
+            <Button className="w-full justify-start" variant="outline"><Download className="mr-2"/> Save to Desktop</Button>
+            <Button className="w-full justify-start" variant="outline"><Share2 className="mr-2"/> Share This Page</Button>
+        </div>
+
+        <div className="w-full max-w-sm mx-auto space-y-4">
+          <h3 className="text-center font-headline text-lg">Company Location</h3>
+          <div className="aspect-video rounded-lg overflow-hidden border">
+             <iframe
+                width="100%"
+                height="100%"
+                loading="lazy"
+                allowFullScreen
+                src={`https://www.google.com/maps/embed/v1/place?q=${encodeURIComponent(cardData.address)}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}>
+              </iframe>
+          </div>
+        </div>
+      </div>
     );
 }
 
