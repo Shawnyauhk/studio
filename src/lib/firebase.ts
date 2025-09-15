@@ -1,6 +1,6 @@
 // src/lib/firebase.ts
 import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
-import { getFirestore, initializeFirestore, memoryLocalCache, persistentLocalCache } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, persistentLocalCache } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig: FirebaseOptions = {
@@ -18,9 +18,9 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize Firestore with offline persistence
 const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: 'browser-tabs'
-  })
+  localCache: persistentLocalCache(/*{
+    tabManager: 'browser-tabs' // Removing this to fix runtime error
+  }*/)
 });
 
 const storage = getStorage(app);
