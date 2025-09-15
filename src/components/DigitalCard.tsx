@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { mockUserDigitalCard } from '@/lib/mock-data';
 import type { DigitalCardData } from '@/lib/types';
-import { Phone, Mail, Globe, MapPin, Edit, Check, QrCode, Star, Download, Share2, Upload, Loader2 } from 'lucide-react';
+import { Phone, Mail, Globe, MapPin, Edit, Check, QrCode, Star, Download, Share2, Upload, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -207,8 +207,14 @@ export default function DigitalCard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  
+  // This ref helps prevent double-fetching in React StrictMode
+  const hasFetched = useRef(false);
 
   useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
     const fetchCardData = async () => {
       setIsLoading(true);
       try {
@@ -220,7 +226,6 @@ export default function DigitalCard() {
           setCardData(data);
           setEditData(data);
         } else {
-          // If no data in Firestore, use mock data and save it for the first time
           await setDoc(cardDocRef, mockUserDigitalCard);
           setCardData(mockUserDigitalCard);
           setEditData(mockUserDigitalCard);
@@ -229,10 +234,9 @@ export default function DigitalCard() {
         console.error("Failed to fetch data from Firestore:", error);
         toast({
             title: "讀取資料失敗",
-            description: "無法從後端讀取您的名片資料。將顯示預設資料。",
+            description: "無法從後端讀取您的名片資料。可能是權限問題，請檢查 Firebase 安全規則。",
             variant: "destructive",
         });
-        // Fallback to mock data if Firestore fails
         setCardData(mockUserDigitalCard);
         setEditData(mockUserDigitalCard);
       } finally {
@@ -245,29 +249,42 @@ export default function DigitalCard() {
   
   const handleSave = async () => {
     setIsSaving(true);
-    try {
-      let dataToSave = { ...editData };
+    let dataToSave = { ...editData };
 
+    try {
       // Step 1: Upload image if it's a new one (data URL)
       if (dataToSave.avatarUrl.startsWith('data:image')) {
+        let uploadedUrl = dataToSave.avatarUrl;
         try {
           const storageRef = ref(storage, `avatars/${USER_ID}/profile.png`);
           const snapshot = await uploadString(storageRef, dataToSave.avatarUrl, 'data_url');
-          const downloadURL = await getDownloadURL(snapshot.ref);
-          dataToSave.avatarUrl = downloadURL;
-        } catch (error) {
-           console.error("Failed to upload avatar:", error);
-           throw new Error("頭像上傳失敗，請稍後再試。");
+          uploadedUrl = await getDownloadURL(snapshot.ref);
+        } catch (uploadError) {
+          console.error("Failed to upload avatar:", uploadError);
+          toast({
+            title: "頭像上傳失敗",
+            description: "無法上傳圖片。請檢查 Firebase Storage 的安全規則是否已部署。",
+            variant: "destructive",
+          });
+          // Do not proceed if upload fails
+          return;
         }
+        dataToSave.avatarUrl = uploadedUrl;
       }
       
       // Step 2: Save data to Firestore
       try {
         const cardDocRef = doc(db, 'digitalCards', USER_ID);
         await setDoc(cardDocRef, dataToSave, { merge: true });
-      } catch(error) {
-        console.error("Failed to save card data:", error);
-        throw new Error("儲存名片資料失敗，請稍後再試。");
+      } catch(dbError) {
+        console.error("Failed to save card data:", dbError);
+        toast({
+            title: "儲存資料失敗",
+            description: "無法儲存名片資料。請檢查 Firebase Firestore 的安全規則是否已部署。",
+            variant: "destructive",
+        });
+        // Do not proceed if save fails
+        return;
       }
       
       setCardData(dataToSave);
@@ -277,13 +294,16 @@ export default function DigitalCard() {
           description: "您的數位名片已成功更新。",
       });
 
-    } catch (error: any) {
+    } catch (error) {
+        // This is a general catch-all for any other unexpected errors
+        console.error("An unexpected error occurred during save:", error);
         toast({
-            title: "儲存失敗",
-            description: error.message || "發生未知錯誤，無法儲存您的變更。",
+            title: "發生未知錯誤",
+            description: "儲存過程中發生預期之外的錯誤。",
             variant: "destructive",
         });
     } finally {
+        // This block is guaranteed to run, ensuring the loading state is always reset.
         setIsSaving(false);
     }
   };
@@ -324,3 +344,5 @@ export default function DigitalCard() {
     </Dialog>
   );
 }
+
+    
