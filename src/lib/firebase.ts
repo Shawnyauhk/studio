@@ -1,6 +1,6 @@
 // src/lib/firebase.ts
 import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
-import { getFirestore, initializeFirestore, persistentLocalCache } from 'firebase/firestore';
+import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig: FirebaseOptions = {
@@ -15,12 +15,20 @@ const firebaseConfig: FirebaseOptions = {
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-
-// Initialize Firestore with offline persistence
-const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({})
-});
-
+const db = getFirestore(app);
 const storage = getStorage(app);
+
+// Enable offline persistence
+try {
+  enableIndexedDbPersistence(db);
+} catch (err: any) {
+  if (err.code === 'failed-precondition') {
+    // Multiple tabs open, persistence can only be enabled in one tab at a time.
+    console.warn('Firebase persistence failed: multiple tabs open.');
+  } else if (err.code === 'unimplemented') {
+    // The current browser does not support all of the features required to enable persistence
+    console.warn('Firebase persistence not available in this browser.');
+  }
+}
 
 export { app, db, storage };
