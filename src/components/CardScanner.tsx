@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRef, useState, useCallback, useEffect } from 'react';
@@ -10,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeCardAndSearchCompanyInfo } from '@/ai/flows/analyze-card-and-search-company-info';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type AnalysisResult = {
   companyName: string;
@@ -20,11 +22,11 @@ export default function CardScanner() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [imageData, setImageData] = useState<string | null>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [notes, setNotes] = useState('');
   const { toast } = useToast();
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
 
   const startCamera = useCallback(async () => {
     try {
@@ -34,9 +36,10 @@ export default function CardScanner() {
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
-      setStream(mediaStream);
+      setHasCameraPermission(true);
     } catch (err) {
       console.error("Error accessing camera:", err);
+      setHasCameraPermission(false);
       toast({
         title: "Camera Error",
         description: "Could not access the camera. Please check permissions.",
@@ -46,14 +49,28 @@ export default function CardScanner() {
   }, [toast]);
 
   useEffect(() => {
-    startCamera();
-    return () => {
-      stream?.getTracks().forEach(track => track.stop());
+    let stream: MediaStream | null = null;
+    const getCameraPermission = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        setHasCameraPermission(true);
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+      }
     };
-  }, [startCamera, stream]);
+    getCameraPermission();
+
+    return () => {
+      stream?.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
 
   const captureImage = () => {
-    if (videoRef.current && canvasRef.current) {
+    if (videoRef.current && canvasRef.current && videoRef.current.srcObject) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       canvas.width = video.videoWidth;
@@ -63,8 +80,10 @@ export default function CardScanner() {
         context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
         const dataUrl = canvas.toDataURL('image/jpeg');
         setImageData(dataUrl);
+        
+        const stream = videoRef.current.srcObject as MediaStream;
         stream?.getTracks().forEach(track => track.stop());
-        setStream(null);
+        videoRef.current.srcObject = null;
       }
     }
   };
@@ -112,10 +131,19 @@ export default function CardScanner() {
           {imageData ? (
             <Image src={imageData} alt="Captured business card" layout="fill" objectFit="contain" />
           ) : (
-            <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover"></video>
+             <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover"></video>
           )}
           <canvas ref={canvasRef} className="hidden"></canvas>
         </div>
+        
+        {hasCameraPermission === false && !imageData && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertTitle>Camera Access Denied</AlertTitle>
+            <AlertDescription>
+              Please enable camera permissions in your browser settings to use this feature.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {!analysisResult && (
           <div className="flex justify-center gap-4 mt-4">
@@ -134,7 +162,7 @@ export default function CardScanner() {
                 </Button>
               </>
             ) : (
-              <Button onClick={captureImage}>
+              <Button onClick={captureImage} disabled={hasCameraPermission !== true}>
                 <Camera className="mr-2 h-4 w-4" /> Capture Card
               </Button>
             )}
