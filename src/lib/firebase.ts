@@ -4,13 +4,12 @@ import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig: FirebaseOptions = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
-  measurementId: "YOUR_MEASUREMENT_ID"
+  apiKey: "AIzaSyDBp4ux24hmjr-5nP9u5RGV-m4h2oLkZoY",
+  authDomain: "studio-697601028-76b1c.firebaseapp.com",
+  projectId: "studio-697601028-76b1c",
+  storageBucket: "studio-697601028-76b1c.appspot.com",
+  messagingSenderId: "60808022828",
+  appId: "1:60808022828:web:9cd0358fa9c9cca4e27a89"
 };
 
 // Initialize Firebase
