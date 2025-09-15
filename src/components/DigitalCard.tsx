@@ -9,6 +9,15 @@ import { Label } from '@/components/ui/label';
 import { mockUserDigitalCard } from '@/lib/mock-data';
 import type { DigitalCardData } from '@/lib/types';
 import { Phone, Mail, Globe, MapPin, Edit, Check, QrCode, Star, Download, Share2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog"
 
 const LOCAL_STORAGE_KEY = 'digital-card-data';
 
@@ -87,9 +96,11 @@ function DigitalCardPreview({ cardData, onEdit }: { cardData: DigitalCardData, o
 
 function DigitalCardForm({ cardData, onUpdate, onSave, onCancel }: { cardData: DigitalCardData, onUpdate: (data: DigitalCardData) => void, onSave: () => void, onCancel: () => void }) {
   return (
-    <Card>
-      <CardContent className="p-6 space-y-4">
-        <h3 className="font-headline text-xl">Edit Your Details</h3>
+    <>
+      <DialogHeader>
+        <DialogTitle className="font-headline text-xl">Edit Your Details</DialogTitle>
+      </DialogHeader>
+      <div className="space-y-4 py-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="name">Full Name</Label>
@@ -126,12 +137,16 @@ function DigitalCardForm({ cardData, onUpdate, onSave, onCancel }: { cardData: D
             <Label htmlFor="avatarUrl">Avatar URL</Label>
             <Input id="avatarUrl" type="url" value={cardData.avatarUrl} onChange={e => onUpdate({...cardData, avatarUrl: e.target.value})} />
         </div>
-        <div className="flex justify-end gap-2 pt-4">
+      </div>
+      <DialogFooter>
+          <DialogClose asChild>
             <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+          </DialogClose>
+          <DialogClose asChild>
             <Button onClick={onSave}><Check className="mr-2 h-4 w-4" /> Save Changes</Button>
-        </div>
-      </CardContent>
-    </Card>
+          </DialogClose>
+      </DialogFooter>
+    </>
   )
 }
 
@@ -157,7 +172,7 @@ export default function DigitalCard() {
   };
   
   const handleCancel = () => {
-    setEditData(cardData);
+    setEditData(cardData); // Reset changes
     setIsEditing(false);
   }
 
@@ -171,25 +186,28 @@ export default function DigitalCard() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        <div className="lg:sticky top-24">
-            <DigitalCardPreview cardData={cardData} onEdit={handleEdit} />
-        </div>
-        <div className="space-y-4">
-          {isEditing ? (
-              <DigitalCardForm cardData={editData} onUpdate={setEditData} onSave={handleSave} onCancel={handleCancel}/>
-          ) : (
+    <Dialog open={isEditing} onOpenChange={setIsEditing}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          <div className="lg:sticky top-24">
+              <DigitalCardPreview cardData={cardData} onEdit={handleEdit} />
+          </div>
+          <div className="space-y-4">
             <Card>
               <CardContent className="p-6">
                 <div className="flex justify-between items-center">
                   <h3 className="font-headline text-xl">Your Card Preview</h3>
-                  <Button onClick={handleEdit} variant="outline"><Edit className="mr-2 h-4 w-4"/>Edit</Button>
+                  <DialogTrigger asChild>
+                    <Button variant="outline"><Edit className="mr-2 h-4 w-4"/>Edit</Button>
+                  </DialogTrigger>
                 </div>
                 <p className="text-muted-foreground mt-2">This is how your card appears to others. Click edit to make changes.</p>
               </CardContent>
             </Card>
-          )}
-        </div>
-    </div>
+          </div>
+      </div>
+       <DialogContent className="sm:max-w-[625px]">
+          <DigitalCardForm cardData={editData} onUpdate={setEditData} onSave={handleSave} onCancel={handleCancel}/>
+      </DialogContent>
+    </Dialog>
   );
 }
