@@ -29,12 +29,18 @@ export default function CardScanner() {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
 
   const startCamera = useCallback(async () => {
+    // Stop any existing streams
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+    }
+
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'environment' } 
       });
       if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
+        videoRef.current.srcObject = stream;
       }
       setHasCameraPermission(true);
     } catch (err) {
@@ -42,32 +48,23 @@ export default function CardScanner() {
       setHasCameraPermission(false);
       toast({
         title: "Camera Error",
-        description: "Could not access the camera. Please check permissions.",
+        description: "Could not access the camera. Please check your browser permissions.",
         variant: "destructive",
       });
     }
   }, [toast]);
 
   useEffect(() => {
-    let stream: MediaStream | null = null;
-    const getCameraPermission = async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        setHasCameraPermission(true);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (error) {
-        console.error('Error accessing camera:', error);
-        setHasCameraPermission(false);
-      }
-    };
-    getCameraPermission();
+    startCamera();
 
     return () => {
-      stream?.getTracks().forEach((track) => track.stop());
+      // Cleanup: stop camera when component unmounts
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+      }
     };
-  }, []);
+  }, [startCamera]);
 
   const captureImage = () => {
     if (videoRef.current && canvasRef.current && videoRef.current.srcObject) {
