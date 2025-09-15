@@ -187,23 +187,8 @@ export default function DigitalCard() {
 
   return (
     <Dialog open={isEditing} onOpenChange={setIsEditing}>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          <div className="lg:sticky top-24">
-              <DigitalCardPreview cardData={cardData} onEdit={handleEdit} />
-          </div>
-          <div className="space-y-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-headline text-xl">Your Card Preview</h3>
-                  <DialogTrigger asChild>
-                    <Button variant="outline"><Edit className="mr-2 h-4 w-4"/>Edit</Button>
-                  </DialogTrigger>
-                </div>
-                <p className="text-muted-foreground mt-2">This is how your card appears to others. Click edit to make changes.</p>
-              </CardContent>
-            </Card>
-          </div>
+      <div className="max-w-sm mx-auto">
+          <DigitalCardPreview cardData={cardData} onEdit={handleEdit} />
       </div>
        <DialogContent className="sm:max-w-[625px]">
           <DigitalCardForm cardData={editData} onUpdate={setEditData} onSave={handleSave} onCancel={handleCancel}/>
