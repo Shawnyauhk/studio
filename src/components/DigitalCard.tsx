@@ -204,12 +204,13 @@ export default function DigitalCard() {
   const [cardData, setCardData] = useState<DigitalCardData>(mockUserDigitalCard);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<DigitalCardData>(cardData);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchCardData = async () => {
+      setIsLoading(true);
       try {
         const cardDocRef = doc(db, 'digitalCards', USER_ID);
         const docSnap = await getDoc(cardDocRef);
@@ -219,23 +220,23 @@ export default function DigitalCard() {
           setCardData(data);
           setEditData(data);
         } else {
-          // If no data in Firestore, use mock data and maybe save it
+          // If no data in Firestore, use mock data and save it for the first time
           await setDoc(cardDocRef, mockUserDigitalCard);
           setCardData(mockUserDigitalCard);
           setEditData(mockUserDigitalCard);
         }
       } catch (error) {
-        console.error("Failed to fetch data from Firestore", error);
+        console.error("Failed to fetch data from Firestore:", error);
         toast({
             title: "讀取資料失敗",
-            description: "無法從後端讀取您的名片資料。",
+            description: "無法從後端讀取您的名片資料。將顯示預設資料。",
             variant: "destructive",
         });
         // Fallback to mock data if Firestore fails
         setCardData(mockUserDigitalCard);
         setEditData(mockUserDigitalCard);
       } finally {
-        setIsLoaded(true);
+        setIsLoading(false);
       }
     };
     
@@ -247,29 +248,39 @@ export default function DigitalCard() {
     try {
       let dataToSave = { ...editData };
 
-      // Check if avatarUrl is a new upload (data URL)
+      // Step 1: Upload image if it's a new one (data URL)
       if (dataToSave.avatarUrl.startsWith('data:image')) {
-        const storageRef = ref(storage, `avatars/${USER_ID}/profile.png`);
-        const snapshot = await uploadString(storageRef, dataToSave.avatarUrl, 'data_url');
-        const downloadURL = await getDownloadURL(snapshot.ref);
-        dataToSave.avatarUrl = downloadURL;
+        try {
+          const storageRef = ref(storage, `avatars/${USER_ID}/profile.png`);
+          const snapshot = await uploadString(storageRef, dataToSave.avatarUrl, 'data_url');
+          const downloadURL = await getDownloadURL(snapshot.ref);
+          dataToSave.avatarUrl = downloadURL;
+        } catch (error) {
+           console.error("Failed to upload avatar:", error);
+           throw new Error("頭像上傳失敗，請稍後再試。");
+        }
       }
       
-      const cardDocRef = doc(db, 'digitalCards', USER_ID);
-      await setDoc(cardDocRef, dataToSave);
+      // Step 2: Save data to Firestore
+      try {
+        const cardDocRef = doc(db, 'digitalCards', USER_ID);
+        await setDoc(cardDocRef, dataToSave, { merge: true });
+      } catch(error) {
+        console.error("Failed to save card data:", error);
+        throw new Error("儲存名片資料失敗，請稍後再試。");
+      }
       
       setCardData(dataToSave);
       setIsEditing(false);
       toast({
           title: "儲存成功",
-          description: "您的數位名片已更新。",
+          description: "您的數位名片已成功更新。",
       });
 
-    } catch (error) {
-       console.error("Failed to save data to Firebase", error);
+    } catch (error: any) {
         toast({
             title: "儲存失敗",
-            description: "無法將您的變更儲存到後端。請檢查您的網路連線與 Firebase 安全規則。",
+            description: error.message || "發生未知錯誤，無法儲存您的變更。",
             variant: "destructive",
         });
     } finally {
@@ -287,11 +298,11 @@ export default function DigitalCard() {
     setIsEditing(true);
   }
 
-  if (!isLoaded) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-4">讀取中...</p>
+        <p className="ml-4">讀取您的數位名片...</p>
       </div>
     );
   }
