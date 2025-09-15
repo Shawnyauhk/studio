@@ -244,9 +244,9 @@ export default function DigitalCard() {
   
   const handleSave = async () => {
     setIsSaving(true);
-    let dataToSave = { ...editData };
-
     try {
+      let dataToSave = { ...editData };
+
       // Check if avatarUrl is a new upload (data URL)
       if (dataToSave.avatarUrl.startsWith('data:image')) {
         const storageRef = ref(storage, `avatars/${USER_ID}/profile.png`);
@@ -269,7 +269,7 @@ export default function DigitalCard() {
        console.error("Failed to save data to Firebase", error);
         toast({
             title: "儲存失敗",
-            description: "無法將您的變更儲存到後端。",
+            description: "無法將您的變更儲存到後端。請檢查您的網路連線與 Firebase 安全規則。",
             variant: "destructive",
         });
     } finally {
@@ -313,5 +313,3 @@ export default function DigitalCard() {
     </Dialog>
   );
 }
-
-    
