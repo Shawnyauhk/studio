@@ -18,9 +18,7 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize Firestore with offline persistence
 const db = initializeFirestore(app, {
-  localCache: persistentLocalCache(/*{
-    tabManager: 'browser-tabs' // Removing this to fix runtime error
-  }*/)
+  localCache: persistentLocalCache({})
 });
 
 const storage = getStorage(app);
