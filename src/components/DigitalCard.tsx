@@ -1,5 +1,6 @@
+
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { mockUserDigitalCard } from '@/lib/mock-data';
 import type { DigitalCardData } from '@/lib/types';
 import { Phone, Mail, Globe, MapPin, Edit, Check, QrCode, Star, Download, Share2 } from 'lucide-react';
+
+const LOCAL_STORAGE_KEY = 'digital-card-data';
 
 function DigitalCardPreview({ cardData }: { cardData: DigitalCardData }) {
     return (
@@ -131,8 +134,19 @@ export default function DigitalCard() {
   const [cardData, setCardData] = useState<DigitalCardData>(mockUserDigitalCard);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<DigitalCardData>(cardData);
+  const [isLoaded, setIsLoaded] = useState(false);
 
+  useEffect(() => {
+    const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (savedData) {
+      setCardData(JSON.parse(savedData));
+      setEditData(JSON.parse(savedData));
+    }
+    setIsLoaded(true);
+  }, []);
+  
   const handleSave = () => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(editData));
     setCardData(editData);
     setIsEditing(false);
   };
@@ -145,6 +159,10 @@ export default function DigitalCard() {
   const handleEdit = () => {
     setEditData(cardData);
     setIsEditing(true);
+  }
+
+  if (!isLoaded) {
+    return null; // or a loading spinner
   }
 
   return (
