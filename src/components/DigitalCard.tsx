@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { mockUserDigitalCard } from '@/lib/mock-data';
 import type { DigitalCardData } from '@/lib/types';
-import { Phone, Mail, Globe, MapPin, Edit, Check, QrCode, Star, Download, Share2 } from 'lucide-react';
+import { Phone, Mail, Globe, MapPin, Edit, Check, QrCode, Star, Download, Share2, Upload } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -95,55 +96,100 @@ function DigitalCardPreview({ cardData, onEdit }: { cardData: DigitalCardData, o
 
 
 function DigitalCardForm({ cardData, onUpdate, onSave, onCancel }: { cardData: DigitalCardData, onUpdate: (data: DigitalCardData) => void, onSave: () => void, onCancel: () => void }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        toast({
+          title: "檔案太大",
+          description: "請選擇小於 2MB 的圖片。",
+          variant: "destructive",
+        });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        onUpdate({ ...cardData, avatarUrl: result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <>
       <DialogHeader>
-        <DialogTitle className="font-headline text-xl">Edit Your Details</DialogTitle>
+        <DialogTitle className="font-headline text-xl">編輯您的詳細資料</DialogTitle>
       </DialogHeader>
       <div className="space-y-4 py-4">
+        <div className="flex items-center gap-4">
+            <div className="relative">
+                <Image
+                    src={cardData.avatarUrl}
+                    alt="Avatar Preview"
+                    width={80}
+                    height={80}
+                    className="rounded-full object-cover"
+                />
+            </div>
+            <Button variant="outline" onClick={handleAvatarClick}>
+                <Upload className="mr-2 h-4 w-4" />
+                更換頭像
+            </Button>
+            <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/png, image/jpeg, image/gif"
+                onChange={handleFileChange}
+            />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="name">Full Name</Label>
+            <Label htmlFor="name">全名</Label>
             <Input id="name" value={cardData.name} onChange={e => onUpdate({...cardData, name: e.target.value})} />
           </div>
           <div>
-            <Label htmlFor="title">Title / Position</Label>
+            <Label htmlFor="title">職稱 / 職位</Label>
             <Input id="title" value={cardData.title} onChange={e => onUpdate({...cardData, title: e.target.value})} />
           </div>
         </div>
         <div>
-            <Label htmlFor="company">Company</Label>
+            <Label htmlFor="company">公司</Label>
             <Input id="company" value={cardData.company} onChange={e => onUpdate({...cardData, company: e.target.value})} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="phone">Phone</Label>
+            <Label htmlFor="phone">電話</Label>
             <Input id="phone" type="tel" value={cardData.phone} onChange={e => onUpdate({...cardData, phone: e.target.value})} />
           </div>
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">電子郵件</Label>
             <Input id="email" type="email" value={cardData.email} onChange={e => onUpdate({...cardData, email: e.target.value})} />
           </div>
         </div>
          <div>
-            <Label htmlFor="website">Website</Label>
+            <Label htmlFor="website">網站</Label>
             <Input id="website" type="url" value={cardData.website} onChange={e => onUpdate({...cardData, website: e.target.value})} />
         </div>
         <div>
-            <Label htmlFor="address">Address</Label>
+            <Label htmlFor="address">地址</Label>
             <Input id="address" value={cardData.address} onChange={e => onUpdate({...cardData, address: e.target.value})} />
-        </div>
-        <div>
-            <Label htmlFor="avatarUrl">Avatar URL</Label>
-            <Input id="avatarUrl" type="url" value={cardData.avatarUrl} onChange={e => onUpdate({...cardData, avatarUrl: e.target.value})} />
         </div>
       </div>
       <DialogFooter>
           <DialogClose asChild>
-            <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+            <Button variant="ghost" onClick={onCancel}>取消</Button>
           </DialogClose>
           <DialogClose asChild>
-            <Button onClick={onSave}><Check className="mr-2 h-4 w-4" /> Save Changes</Button>
+            <Button onClick={onSave}><Check className="mr-2 h-4 w-4" /> 儲存變更</Button>
           </DialogClose>
       </DialogFooter>
     </>
@@ -159,8 +205,16 @@ export default function DigitalCard() {
   useEffect(() => {
     const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (savedData) {
-      setCardData(JSON.parse(savedData));
-      setEditData(JSON.parse(savedData));
+      try {
+        const parsedData = JSON.parse(savedData);
+        setCardData(parsedData);
+        setEditData(parsedData);
+      } catch (error) {
+        console.error("Failed to parse data from localStorage", error);
+        // Fallback to mock data if parsing fails
+        setCardData(mockUserDigitalCard);
+        setEditData(mockUserDigitalCard);
+      }
     }
     setIsLoaded(true);
   }, []);
@@ -182,7 +236,11 @@ export default function DigitalCard() {
   }
 
   if (!isLoaded) {
-    return null; // or a loading spinner
+    return (
+      <div className="flex justify-center items-center h-64">
+        <p>讀取中...</p>
+      </div>
+    );
   }
 
   return (
@@ -196,3 +254,5 @@ export default function DigitalCard() {
     </Dialog>
   );
 }
+
+    
