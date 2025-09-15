@@ -5,15 +5,21 @@ import { getStorage } from 'firebase/storage';
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: "AIzaSyDBp4ux24hmjr-5nP9u5RGV-m4h2oLkZoY",
-  authDomain: "studio-697601028-76b1c.firebaseapp.com",
-  projectId: "studio-697601028-76b1c",
-  storageBucket: "studio-697601028-76b1c.appspot.com",
+  authDomain: "gourmet-ai-yfnzg.firebaseapp.com",
+  projectId: "gourmet-ai-yfnzg",
+  storageBucket: "gourmet-ai-yfnzg.appspot.com",
   messagingSenderId: "60808022828",
   appId: "1:60808022828:web:9cd0358fa9c9cca4e27a89"
 };
 
-// Initialize Firebase for SSR
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// --- Firebase App Initialization ---
+let app;
+if (!getApps().length) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApp();
+}
+
 const db = getFirestore(app);
 const storage = getStorage(app);
 
