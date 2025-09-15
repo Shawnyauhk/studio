@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { mockUserDigitalCard } from '@/lib/mock-data';
 import type { DigitalCardData } from '@/lib/types';
-import { Phone, Mail, Globe, MapPin, Edit, Check, QrCode, Star, Download, Share2, Upload } from 'lucide-react';
+import { Phone, Mail, Globe, MapPin, Edit, Check, QrCode, Star, Download, Share2, Upload, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -19,8 +19,13 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog"
+import { db, storage } from '@/lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+
 
 const LOCAL_STORAGE_KEY = 'digital-card-data';
+const USER_ID = 'user-123'; // Using a mock user ID for now
 
 function DigitalCardPreview({ cardData, onEdit }: { cardData: DigitalCardData, onEdit: () => void }) {
     return (
@@ -95,7 +100,7 @@ function DigitalCardPreview({ cardData, onEdit }: { cardData: DigitalCardData, o
 }
 
 
-function DigitalCardForm({ cardData, onUpdate, onSave, onCancel }: { cardData: DigitalCardData, onUpdate: (data: DigitalCardData) => void, onSave: () => void, onCancel: () => void }) {
+function DigitalCardForm({ cardData, onUpdate, onSave, onCancel, isSaving }: { cardData: DigitalCardData, onUpdate: (data: DigitalCardData) => void, onSave: () => void, onCancel: () => void, isSaving: boolean }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -185,12 +190,11 @@ function DigitalCardForm({ cardData, onUpdate, onSave, onCancel }: { cardData: D
         </div>
       </div>
       <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="ghost" onClick={onCancel}>取消</Button>
-          </DialogClose>
-          <DialogClose asChild>
-            <Button onClick={onSave}><Check className="mr-2 h-4 w-4" /> 儲存變更</Button>
-          </DialogClose>
+          <Button variant="ghost" onClick={onCancel} disabled={isSaving}>取消</Button>
+          <Button onClick={onSave} disabled={isSaving}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+            儲存變更
+          </Button>
       </DialogFooter>
     </>
   )
@@ -201,28 +205,76 @@ export default function DigitalCard() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<DigitalCardData>(cardData);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (savedData) {
+    const fetchCardData = async () => {
       try {
-        const parsedData = JSON.parse(savedData);
-        setCardData(parsedData);
-        setEditData(parsedData);
+        const cardDocRef = doc(db, 'digitalCards', USER_ID);
+        const docSnap = await getDoc(cardDocRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data() as DigitalCardData;
+          setCardData(data);
+          setEditData(data);
+        } else {
+          // If no data in Firestore, use mock data and maybe save it
+          await setDoc(cardDocRef, mockUserDigitalCard);
+          setCardData(mockUserDigitalCard);
+          setEditData(mockUserDigitalCard);
+        }
       } catch (error) {
-        console.error("Failed to parse data from localStorage", error);
-        // Fallback to mock data if parsing fails
+        console.error("Failed to fetch data from Firestore", error);
+        toast({
+            title: "讀取資料失敗",
+            description: "無法從後端讀取您的名片資料。",
+            variant: "destructive",
+        });
+        // Fallback to mock data if Firestore fails
         setCardData(mockUserDigitalCard);
         setEditData(mockUserDigitalCard);
+      } finally {
+        setIsLoaded(true);
       }
-    }
-    setIsLoaded(true);
-  }, []);
+    };
+    
+    fetchCardData();
+  }, [toast]);
   
-  const handleSave = () => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(editData));
-    setCardData(editData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    setIsSaving(true);
+    let dataToSave = { ...editData };
+
+    try {
+      // Check if avatarUrl is a new upload (data URL)
+      if (dataToSave.avatarUrl.startsWith('data:image')) {
+        const storageRef = ref(storage, `avatars/${USER_ID}/profile.png`);
+        const snapshot = await uploadString(storageRef, dataToSave.avatarUrl, 'data_url');
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        dataToSave.avatarUrl = downloadURL;
+      }
+      
+      const cardDocRef = doc(db, 'digitalCards', USER_ID);
+      await setDoc(cardDocRef, dataToSave);
+      
+      setCardData(dataToSave);
+      setIsEditing(false);
+      toast({
+          title: "儲存成功",
+          description: "您的數位名片已更新。",
+      });
+
+    } catch (error) {
+       console.error("Failed to save data to Firebase", error);
+        toast({
+            title: "儲存失敗",
+            description: "無法將您的變更儲存到後端。",
+            variant: "destructive",
+        });
+    } finally {
+        setIsSaving(false);
+    }
   };
   
   const handleCancel = () => {
@@ -238,18 +290,25 @@ export default function DigitalCard() {
   if (!isLoaded) {
     return (
       <div className="flex justify-center items-center h-64">
-        <p>讀取中...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="ml-4">讀取中...</p>
       </div>
     );
   }
 
   return (
-    <Dialog open={isEditing} onOpenChange={setIsEditing}>
+    <Dialog open={isEditing} onOpenChange={(open) => { if (!isSaving) setIsEditing(open)}}>
       <div className="max-w-sm mx-auto">
           <DigitalCardPreview cardData={cardData} onEdit={handleEdit} />
       </div>
        <DialogContent className="sm:max-w-[625px]">
-          <DigitalCardForm cardData={editData} onUpdate={setEditData} onSave={handleSave} onCancel={handleCancel}/>
+          <DigitalCardForm 
+            cardData={editData} 
+            onUpdate={setEditData} 
+            onSave={handleSave} 
+            onCancel={handleCancel}
+            isSaving={isSaving}
+          />
       </DialogContent>
     </Dialog>
   );
