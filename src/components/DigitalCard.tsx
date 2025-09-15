@@ -12,10 +12,15 @@ import { Phone, Mail, Globe, MapPin, Edit, Check, QrCode, Star, Download, Share2
 
 const LOCAL_STORAGE_KEY = 'digital-card-data';
 
-function DigitalCardPreview({ cardData }: { cardData: DigitalCardData }) {
+function DigitalCardPreview({ cardData, onEdit }: { cardData: DigitalCardData, onEdit: () => void }) {
     return (
       <div className="space-y-6">
         <div className="w-full max-w-sm mx-auto bg-card rounded-2xl shadow-2xl p-6 relative overflow-hidden">
+            <div className="absolute top-4 right-4 z-20">
+              <Button onClick={onEdit} variant="ghost" size="icon">
+                <Edit className="h-5 w-5" />
+              </Button>
+            </div>
             <div className="absolute -top-16 -right-16 w-48 h-48 bg-primary/20 rounded-full"></div>
             <div className="absolute -bottom-24 -left-12 w-48 h-48 bg-accent/10 rounded-full"></div>
             
@@ -168,7 +173,7 @@ export default function DigitalCard() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         <div className="lg:sticky top-24">
-            <DigitalCardPreview cardData={cardData} />
+            <DigitalCardPreview cardData={cardData} onEdit={handleEdit} />
         </div>
         <div className="space-y-4">
           {isEditing ? (
