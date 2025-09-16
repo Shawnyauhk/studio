@@ -93,25 +93,25 @@ export default function Header() {
             </div>
           </div>
           <Separator />
-          {/* The DropdownMenu wrapper is necessary here to provide context for DropdownMenuSub */}
-          <DropdownMenu>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="w-full justify-start px-2 py-1.5 text-sm font-normal">
+          
+          <div className="flex flex-col w-full text-sm font-normal">
+            <button
+                onClick={() => setLanguage('en')}
+                className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
                 <Languages className="mr-2 h-4 w-4" />
-                <span>{t('language')}</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem onClick={() => setLanguage('en')}>
-                    English {language === 'en' && <span className="ml-auto">✔</span>}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setLanguage('zh')}>
-                    繁體中文 {language === 'zh' && <span className="ml-auto">✔</span>}
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
-          </DropdownMenu>
+                <span>English</span>
+                {language === 'en' && <span className="ml-auto">✔</span>}
+            </button>
+            <button
+                onClick={() => setLanguage('zh')}
+                className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+                 <Languages className="mr-2 h-4 w-4" />
+                <span>繁體中文</span>
+                {language === 'zh' && <span className="ml-auto">✔</span>}
+            </button>
+          </div>
 
           <Button variant="ghost" onClick={logout} className="w-full justify-start px-2 py-1.5 text-sm font-normal">
             <LogOut className="mr-2 h-4 w-4" />
