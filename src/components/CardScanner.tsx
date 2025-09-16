@@ -130,7 +130,7 @@ export default function CardScanner() {
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="aspect-[4/3] w-full bg-muted rounded-md overflow-hidden relative flex items-center justify-center">
+        <div className="aspect-video w-full bg-muted rounded-md overflow-hidden relative flex items-center justify-center">
           {imageData ? (
             <Image src={imageData} alt="Captured business card" layout="fill" objectFit="contain" />
           ) : (
