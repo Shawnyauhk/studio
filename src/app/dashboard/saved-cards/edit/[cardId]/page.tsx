@@ -59,6 +59,7 @@ export default function EditCardPage() {
                     data.title = ensureBilingualObject(data.title);
                     data.companyName = ensureBilingualObject(data.companyName);
                     data.address = ensureBilingualObject(data.address);
+                    data.notes = data.notes || ''; // Ensure notes is at least an empty string
                     setCard(data);
                 } else {
                     toast({
@@ -140,10 +141,10 @@ export default function EditCardPage() {
         const value = card[field] as { en: string; zh: string; };
 
         return (
-             <div>
+             <div className="space-y-2">
                 <Label>{label}</Label>
                 <Tabs defaultValue="en" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="inline-grid grid-cols-2">
                         <TabsTrigger value="en">English</TabsTrigger>
                         <TabsTrigger value="zh">繁體中文</TabsTrigger>
                     </TabsList>
@@ -210,13 +211,13 @@ export default function EditCardPage() {
             <Button asChild variant="outline" size="sm">
                 <Link href="/dashboard/saved-cards">
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Saved Cards
+                    {t('backToSavedCards')}
                 </Link>
             </Button>
             <Card>
                 <CardHeader>
-                    <CardTitle>Edit Business Card</CardTitle>
-                    <CardDescription>Update the details of the scanned business card below.</CardDescription>
+                    <CardTitle>{t('editBusinessCard')}</CardTitle>
+                    <CardDescription>{t('editCardDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? renderSkeleton() : card && (
@@ -258,5 +259,3 @@ export default function EditCardPage() {
         </div>
     );
 }
-
-    

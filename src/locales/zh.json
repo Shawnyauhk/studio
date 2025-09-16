@@ -70,5 +70,8 @@
   "edit": "編輯",
   "delete": "刪除",
   "deleteCardTitle": "您確定嗎？",
-  "deleteCardDescription": "此操作無法復原，將會永久刪除這張名片。"
+  "deleteCardDescription": "此操作無法復原，將會永久刪除這張名片。",
+  "editBusinessCard": "編輯名片",
+  "editCardDescription": "更新下方掃描的名片詳細資訊。",
+  "backToSavedCards": "返回已存名片"
 }

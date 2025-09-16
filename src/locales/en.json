@@ -70,5 +70,8 @@
   "edit": "Edit",
   "delete": "Delete",
   "deleteCardTitle": "Are you absolutely sure?",
-  "deleteCardDescription": "This action cannot be undone. This will permanently delete the business card from your account."
+  "deleteCardDescription": "This action cannot be undone. This will permanently delete the business card from your account.",
+  "editBusinessCard": "Edit Business Card",
+  "editCardDescription": "Update the details of the scanned business card below.",
+  "backToSavedCards": "Back to Saved Cards"
 }
