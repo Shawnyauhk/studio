@@ -1,12 +1,17 @@
+export type BilingualString = {
+  en: string;
+  zh: string;
+};
+
 export type BusinessCard = {
   id: string;
   userId: string;
-  name: string;
-  title: string;
-  companyName: string;
+  name: BilingualString | string; // Support legacy string format for old data
+  title: BilingualString | string;
+  companyName: BilingualString | string;
   email: string;
   phone: string;
-  address: string;
+  address: BilingualString | string;
   companyDescription: string;
   notes: string;
   cardFrontImageUrl: string;

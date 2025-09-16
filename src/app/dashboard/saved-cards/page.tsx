@@ -22,9 +22,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 
-const groupCardsByCompany = (cards: BusinessCard[]) => {
+const groupCardsByCompany = (cards: BusinessCard[], language: 'en' | 'zh') => {
   return cards.reduce((acc, card) => {
-    const company = card.companyName || 'Uncategorized';
+    const companyName = typeof card.companyName === 'object' ? card.companyName[language] : card.companyName;
+    const company = companyName || 'Uncategorized';
     if (!acc[company]) {
       acc[company] = [];
     }
@@ -34,7 +35,7 @@ const groupCardsByCompany = (cards: BusinessCard[]) => {
 };
 
 export default function SavedCardsPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [cards, setCards] = useState<BusinessCard[]>([]);
@@ -78,8 +79,8 @@ export default function SavedCardsPage() {
     fetchCards();
   }, [user, toast]);
 
-  const groupedCards = useMemo(() => groupCardsByCompany(cards), [cards]);
-  const companies = useMemo(() => Object.keys(groupedCards), [groupedCards]);
+  const groupedCards = useMemo(() => groupCardsByCompany(cards, language), [cards, language]);
+  const companies = useMemo(() => Object.keys(groupedCards).sort(), [groupedCards]);
 
   const formatDate = (timestamp: BusinessCard['createdAt']) => {
     if (timestamp instanceof Date) {
@@ -90,6 +91,14 @@ export default function SavedCardsPage() {
     }
     return new Date();
   };
+  
+  const getLocalizedValue = (field: BusinessCard['name']) => {
+      if (typeof field === 'object' && field !== null) {
+          return field[language] || field.en || field.zh || '';
+      }
+      return field || '';
+  }
+
 
   if (isLoading) {
      return (
@@ -141,29 +150,29 @@ export default function SavedCardsPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem>
                               <Pencil className="mr-2 h-4 w-4" />
-                              <span>編輯</span>
+                              <span>{t('edit')}</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive">
                               <Trash2 className="mr-2 h-4 w-4" />
-                              <span>刪除</span>
+                              <span>{t('delete')}</span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
                       <div className="relative aspect-video w-full overflow-hidden">
-                        <Image src={card.cardFrontImageUrl} alt={`Card of ${card.name}`} fill className="object-cover" data-ai-hint="business card"/>
+                        <Image src={card.cardFrontImageUrl} alt={`Card of ${getLocalizedValue(card.name)}`} fill className="object-cover" data-ai-hint="business card"/>
                       </div>
                     </CardHeader>
                     <CardContent className="flex-1 space-y-3 p-4">
-                      <CardTitle className="font-headline text-xl">{card.name}</CardTitle>
+                      <CardTitle className="font-headline text-xl">{getLocalizedValue(card.name)}</CardTitle>
                       <div className="text-muted-foreground space-y-2 text-sm">
                         <p className="flex items-center gap-2">
                           <Briefcase className="h-4 w-4 text-accent flex-shrink-0" />
-                          <span className="font-semibold">{card.title} at {card.companyName}</span>
+                          <span className="font-semibold">{getLocalizedValue(card.title)} at {getLocalizedValue(card.companyName)}</span>
                         </p>
                          <p className="flex items-start gap-2">
                           <MapPin className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
-                          <span>{card.address}</span>
+                          <span>{getLocalizedValue(card.address)}</span>
                         </p>
                         {card.notes && (
                           <p className="flex items-start gap-2">
@@ -180,7 +189,7 @@ export default function SavedCardsPage() {
                             height="100%"
                             loading="lazy"
                             allowFullScreen
-                            src={`https://www.google.com/maps/embed/v1/place?q=${encodeURIComponent(card.address)}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}>
+                            src={`https://www.google.com/maps/embed/v1/place?q=${encodeURIComponent(getLocalizedValue(card.address))}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}>
                           </iframe>
                         </div>
                       </div>

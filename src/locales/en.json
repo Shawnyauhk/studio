@@ -66,5 +66,7 @@
   "saveSuccessDescription": "Your digital business card has been updated.",
   "unknownErrorTitle": "An unknown error occurred",
   "unknownErrorDescription": "An unexpected error occurred during save. Please check your Firebase security rules are deployed.",
-  "savedCardsDescription": "View all your scanned business cards here."
+  "savedCardsDescription": "View all your scanned business cards here.",
+  "edit": "Edit",
+  "delete": "Delete"
 }

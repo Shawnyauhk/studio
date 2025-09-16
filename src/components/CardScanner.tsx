@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { analyzeCardAndSearchCompanyInfo } from '@/ai/flows/analyze-card-and-search-company-info';
+import { analyzeCardAndSearchCompanyInfo, AnalyzeCardAndSearchCompanyInfoOutput } from '@/ai/flows/analyze-card-and-search-company-info';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/context/AuthContext';
@@ -19,15 +19,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 
-type AnalysisResult = {
-  name: string;
-  title: string;
-  companyName: string;
-  phone: string;
-  email: string;
-  address: string;
-  companyDescription: string;
-};
+type AnalysisResult = AnalyzeCardAndSearchCompanyInfoOutput;
 
 type CaptureStage = 'front' | 'back' | 'done';
 
@@ -43,7 +35,7 @@ export default function CardScanner() {
   const { toast } = useToast();
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [captureStage, setCaptureStage] = useState<CaptureStage>('front');
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { user } = useAuth();
   const router = useRouter();
 
@@ -263,6 +255,11 @@ export default function CardScanner() {
     return null;
   }
   
+  const getLocalizedValue = (field?: { en: string; zh: string }) => {
+    if (!field) return '';
+    return field[language] || field.en || '';
+  };
+
   return (
     <Card>
       <CardContent className="p-4 space-y-4">
@@ -312,17 +309,17 @@ export default function CardScanner() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label htmlFor="name" className="flex items-center gap-2 text-muted-foreground"><User />{t('fullName')}</Label>
-                <Input id="name" defaultValue={analysisResult.name} readOnly />
+                <Input id="name" defaultValue={getLocalizedValue(analysisResult.name)} readOnly />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="title" className="flex items-center gap-2 text-muted-foreground"><Briefcase />{t('jobTitle')}</Label>
-                <Input id="title" defaultValue={analysisResult.title} readOnly />
+                <Input id="title" defaultValue={getLocalizedValue(analysisResult.title)} readOnly />
               </div>
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="companyName" className="flex items-center gap-2 text-muted-foreground"><Building />{t('companyName')}</Label>
-              <Input id="companyName" defaultValue={analysisResult.companyName} readOnly />
+              <Input id="companyName" defaultValue={getLocalizedValue(analysisResult.companyName)} readOnly />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -338,7 +335,7 @@ export default function CardScanner() {
 
             <div className="space-y-1">
               <Label htmlFor="address" className="flex items-center gap-2 text-muted-foreground"><MapPin />{t('address')}</Label>
-              <Input id="address" defaultValue={analysisResult.address} readOnly />
+              <Input id="address" defaultValue={getLocalizedValue(analysisResult.address)} readOnly />
             </div>
 
             <div>
