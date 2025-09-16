@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Building, Calendar, FileText, Loader2, Briefcase, MapPin } from 'lucide-react';
+import { Building, Calendar, FileText, Loader2, Briefcase, MapPin, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import type { BusinessCard } from '@/lib/types';
@@ -14,6 +14,12 @@ import { useAuth } from '@/context/AuthContext';
 import { getFirebase } from '@/lib/firebase';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 
 const groupCardsByCompany = (cards: BusinessCard[]) => {
@@ -124,7 +130,26 @@ export default function SavedCardsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
                 {groupedCards[company].map((card) => (
                    <Card key={card.id} className="flex flex-col overflow-hidden hover:shadow-lg transition-shadow">
-                    <CardHeader>
+                    <CardHeader className="relative">
+                      <div className="absolute top-2 right-2 z-10">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-black/30 hover:bg-black/50 text-white">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              <span>編輯</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>刪除</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                       <div className="relative aspect-video w-full overflow-hidden rounded-t-lg">
                         <Image src={card.cardFrontImageUrl} alt={`Card of ${card.name}`} fill className="object-cover" data-ai-hint="business card"/>
                       </div>
@@ -134,7 +159,7 @@ export default function SavedCardsPage() {
                       <div className="text-muted-foreground space-y-2 text-sm">
                         <p className="flex items-center gap-2">
                           <Briefcase className="h-4 w-4 text-accent flex-shrink-0" />
-                          <span className="font-semibold">{card.title}</span>
+                          <span className="font-semibold">{card.title} at {card.companyName}</span>
                         </p>
                          <p className="flex items-start gap-2">
                           <MapPin className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
