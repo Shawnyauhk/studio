@@ -33,6 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 
 type SortOption = 'createdAt_desc' | 'createdAt_asc' | 'companyName_asc';
@@ -187,23 +188,20 @@ export default function SavedCardsPage() {
     const foundDistrictsSet = new Set<string>();
 
     cards.forEach(card => {
-      const addressEn = (typeof card.address === 'object' ? card.address?.en : card.address) || '';
-      const addressZh = (typeof card.address === 'object' ? card.address?.zh : '') || '';
+        const addressEn = (typeof card.address === 'object' ? card.address?.en : card.address) || '';
+        const addressZh = (typeof card.address === 'object' ? card.address?.zh : '') || '';
 
-      Object.values(hongKongDistricts).flat().forEach(district => {
-        // Check if the district is already found to avoid redundant checks
-        if (foundDistrictsSet.has(district)) {
-            return;
-        }
-        // Check English address (case-insensitive)
-        if (addressEn && addressEn.toLowerCase().includes(district.toLowerCase())) {
-            foundDistrictsSet.add(district);
-        }
-        // Check Chinese address
-        if (addressZh && addressZh.includes(district)) {
-            foundDistrictsSet.add(district);
-        }
-      });
+        Object.values(hongKongDistricts).flat().forEach(district => {
+            if (foundDistrictsSet.has(district)) {
+                return;
+            }
+            if (addressEn && addressEn.toLowerCase().includes(district.toLowerCase())) {
+                foundDistrictsSet.add(district);
+            }
+            if (addressZh && addressZh.includes(district)) {
+                foundDistrictsSet.add(district);
+            }
+        });
     });
 
     Object.entries(hongKongDistricts).forEach(([groupName, districts]) => {
@@ -306,72 +304,76 @@ export default function SavedCardsPage() {
             <AccordionContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
                 {groupedCards[company].map((card) => (
-                   <Card key={card.id} className="flex flex-col overflow-hidden hover:shadow-lg transition-shadow">
-                    <CardHeader className="relative p-0">
-                      <div className="absolute top-2 right-2 z-10">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-black/30 hover:bg-black/50 text-white">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router.push(`/dashboard/saved-cards/edit/${card.id}`)}>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              <span>{t('edit')}</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setCardToDelete(card)}>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              <span>{t('delete')}</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      <div className="relative aspect-video w-full overflow-hidden">
-                        <Image src={card.cardFrontImageUrl} alt={`Card of ${getLocalizedValue(card.name)}`} fill className="object-cover" data-ai-hint="business card"/>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="flex-1 space-y-3 p-4">
-                      <CardTitle className="font-headline text-xl">{getLocalizedValue(card.name)}</CardTitle>
-                      <div className="text-muted-foreground space-y-2 text-sm">
-                        <p className="flex items-center gap-2">
-                          <Briefcase className="h-4 w-4 text-accent flex-shrink-0" />
-                          <span className="font-semibold">{getLocalizedValue(card.title)} at {getLocalizedValue(card.companyName)}</span>
-                        </p>
-                         <p className="flex items-start gap-2">
-                          <MapPin className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
-                          <span>{getLocalizedValue(card.address)}</span>
-                        </p>
-                        {card.notes && (
-                          <p className="flex items-start gap-2">
-                            <FileText className="h-4 w-4 text-accent mt-1 flex-shrink-0" />
-                            <span className="italic">"{card.notes}"</span>
-                          </p>
-                        )}
-                      </div>
-                      <div className="pt-2">
-                        <h4 className="font-semibold text-foreground mb-2">{t('companyLocation')}</h4>
-                        <div className="aspect-video rounded-md overflow-hidden border">
-                          <iframe
-                            width="100%"
-                            height="100%"
-                            loading="lazy"
-                            allowFullScreen
-                            src={`https://www.google.com/maps/embed/v1/place?q=${encodeURIComponent(getLocalizedValue(card.address))}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}>
-                          </iframe>
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex justify-between items-center text-xs text-muted-foreground bg-slate-50 p-3">
-                       <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {t('added')} {formatDistanceToNow(formatDate(card.createdAt), { addSuffix: true })}
-                       </div>
-                       <Button variant="link" size="sm" asChild className="p-0 h-auto">
-                          <Link href="#">{t('viewDetails')}</Link>
-                       </Button>
-                    </CardFooter>
-                  </Card>
+                   <Collapsible key={card.id} asChild>
+                     <Card className="flex flex-col overflow-hidden hover:shadow-lg transition-shadow">
+                       <CardHeader className="flex-row items-start justify-between p-4">
+                         <CardTitle className="font-headline text-xl">{getLocalizedValue(card.name)}</CardTitle>
+                         <DropdownMenu>
+                           <DropdownMenuTrigger asChild>
+                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full flex-shrink-0 -mt-1 -mr-1">
+                               <MoreVertical className="h-4 w-4" />
+                             </Button>
+                           </DropdownMenuTrigger>
+                           <DropdownMenuContent align="end">
+                             <DropdownMenuItem onClick={() => router.push(`/dashboard/saved-cards/edit/${card.id}`)}>
+                               <Pencil className="mr-2 h-4 w-4" />
+                               <span>{t('edit')}</span>
+                             </DropdownMenuItem>
+                             <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setCardToDelete(card)}>
+                               <Trash2 className="mr-2 h-4 w-4" />
+                               <span>{t('delete')}</span>
+                             </DropdownMenuItem>
+                           </DropdownMenuContent>
+                         </DropdownMenu>
+                       </CardHeader>
+                       <CardContent className="flex-1 space-y-3 p-4 pt-0">
+                         <div className="text-muted-foreground space-y-2 text-sm">
+                           <p className="flex items-center gap-2">
+                             <Briefcase className="h-4 w-4 text-accent flex-shrink-0" />
+                             <span className="font-semibold">{getLocalizedValue(card.title)} at {getLocalizedValue(card.companyName)}</span>
+                           </p>
+                           <p className="flex items-start gap-2">
+                             <MapPin className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
+                             <span>{getLocalizedValue(card.address)}</span>
+                           </p>
+                           {card.notes && (
+                             <p className="flex items-start gap-2">
+                               <FileText className="h-4 w-4 text-accent mt-1 flex-shrink-0" />
+                               <span className="italic">"{card.notes}"</span>
+                             </p>
+                           )}
+                         </div>
+                       </CardContent>
+                       <CollapsibleContent className="space-y-4 px-4">
+                          <div className="relative aspect-video w-full overflow-hidden rounded-md border">
+                            <Image src={card.cardFrontImageUrl} alt={`Card of ${getLocalizedValue(card.name)}`} fill className="object-cover" data-ai-hint="business card"/>
+                          </div>
+                          <div className="pt-2">
+                            <h4 className="font-semibold text-foreground mb-2">{t('companyLocation')}</h4>
+                            <div className="aspect-video rounded-md overflow-hidden border">
+                              <iframe
+                                width="100%"
+                                height="100%"
+                                loading="lazy"
+                                allowFullScreen
+                                src={`https://www.google.com/maps/embed/v1/place?q=${encodeURIComponent(getLocalizedValue(card.address))}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}>
+                              </iframe>
+                            </div>
+                          </div>
+                       </CollapsibleContent>
+                       <CardFooter className="flex justify-between items-center text-xs text-muted-foreground bg-slate-50 p-3 mt-4">
+                          <div className="flex items-center gap-1">
+                             <Calendar className="h-3 w-3" />
+                             {t('added')} {formatDistanceToNow(formatDate(card.createdAt), { addSuffix: true })}
+                          </div>
+                          <CollapsibleTrigger asChild>
+                           <Button variant="link" size="sm" className="p-0 h-auto">
+                              {t('viewDetails')}
+                           </Button>
+                          </CollapsibleTrigger>
+                       </CardFooter>
+                     </Card>
+                   </Collapsible>
                 ))}
               </div>
             </AccordionContent>
@@ -401,3 +403,5 @@ export default function SavedCardsPage() {
     </div>
   );
 }
+
+    
