@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Building, Calendar, FileText, Loader2, Briefcase, MapPin, MoreVertical, Pencil, Trash2, Camera, Search, ArrowUpDown, Globe } from 'lucide-react';
+import { Building, Calendar, FileText, Loader2, Briefcase, MapPin, MoreVertical, Pencil, Trash2, Camera, Search, ArrowUpDown, Globe, Phone, Mail } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import type { BusinessCard } from '@/lib/types';
@@ -188,29 +188,32 @@ export default function SavedCardsPage() {
     const foundDistrictsSet = new Set<string>();
 
     cards.forEach(card => {
-        const addressEn = (typeof card.address === 'object' ? card.address?.en : card.address) || '';
-        const addressZh = (typeof card.address === 'object' ? card.address?.zh : '') || '';
-
-        Object.values(hongKongDistricts).flat().forEach(district => {
-            if (foundDistrictsSet.has(district)) {
-                return;
-            }
-            if (addressEn && addressEn.toLowerCase().includes(district.toLowerCase())) {
-                foundDistrictsSet.add(district);
-            }
-            if (addressZh && addressZh.includes(district)) {
-                foundDistrictsSet.add(district);
-            }
-        });
-    });
-
-    Object.entries(hongKongDistricts).forEach(([groupName, districts]) => {
-        const foundInGroup = districts.filter(d => foundDistrictsSet.has(d));
-        if (foundInGroup.length > 0) {
-            available[groupName] = foundInGroup;
+      const addressEn = (typeof card.address === 'object' ? card.address?.en : card.address) || '';
+      const addressZh = (typeof card.address === 'object' ? card.address?.zh : '') || '';
+  
+      Object.values(hongKongDistricts).flat().forEach(district => {
+        if (foundDistrictsSet.has(district)) {
+          return;
         }
+  
+        // For Chinese, do a direct includes check without case conversion
+        if (addressZh && addressZh.includes(district)) {
+          foundDistrictsSet.add(district);
+        }
+        // For English, convert both to lower case for case-insensitive comparison
+        else if (addressEn && addressEn.toLowerCase().includes(district.toLowerCase().replace(/\s/g, ''))) {
+          foundDistrictsSet.add(district);
+        }
+      });
     });
-
+  
+    Object.entries(hongKongDistricts).forEach(([groupName, districts]) => {
+      const foundInGroup = districts.filter(d => foundDistrictsSet.has(d));
+      if (foundInGroup.length > 0) {
+        available[groupName] = foundInGroup;
+      }
+    });
+  
     return available;
   }, [cards]);
 
@@ -336,8 +339,16 @@ export default function SavedCardsPage() {
                              <MapPin className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
                              <span>{getLocalizedValue(card.address)}</span>
                            </p>
+                            <p className="flex items-center gap-2">
+                                <Phone className="h-4 w-4 text-accent flex-shrink-0" />
+                                <span>{card.phone}</span>
+                            </p>
+                            <p className="flex items-center gap-2">
+                                <Mail className="h-4 w-4 text-accent flex-shrink-0" />
+                                <span>{card.email}</span>
+                            </p>
                            {card.notes && (
-                             <p className="flex items-start gap-2">
+                             <p className="flex items-start gap-2 pt-2 border-t border-dashed">
                                <FileText className="h-4 w-4 text-accent mt-1 flex-shrink-0" />
                                <span className="italic">"{card.notes}"</span>
                              </p>
@@ -348,6 +359,11 @@ export default function SavedCardsPage() {
                           <div className="relative aspect-video w-full overflow-hidden rounded-md border">
                             <Image src={card.cardFrontImageUrl} alt={`Card of ${getLocalizedValue(card.name)}`} fill className="object-cover" data-ai-hint="business card"/>
                           </div>
+                          {card.cardBackImageUrl && (
+                            <div className="relative aspect-video w-full overflow-hidden rounded-md border">
+                                <Image src={card.cardBackImageUrl} alt={`Card of ${getLocalizedValue(card.name)} (back)`} fill className="object-cover" data-ai-hint="business card"/>
+                            </div>
+                          )}
                           <div className="pt-2">
                             <h4 className="font-semibold text-foreground mb-2">{t('companyLocation')}</h4>
                             <div className="aspect-video rounded-md overflow-hidden border">
@@ -403,5 +419,3 @@ export default function SavedCardsPage() {
     </div>
   );
 }
-
-    
