@@ -18,10 +18,22 @@ import { getFirebase } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 type AnalysisResult = AnalyzeCardAndSearchCompanyInfoOutput;
 
 type CaptureStage = 'front' | 'back' | 'done';
+
+const ensureBilingualObject = (field: any) => {
+    if (typeof field === 'string') {
+        return { en: field, zh: '' };
+    }
+    if (typeof field === 'object' && field !== null) {
+        return { en: field.en || '', zh: field.zh || '' };
+    }
+    return { en: '', zh: '' };
+};
 
 export default function CardScanner() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -128,7 +140,17 @@ export default function CardScanner() {
         cardFrontImageDataUri: frontImage,
         cardBackImageDataUri: backImage,
        });
-      setAnalysisResult(result);
+       
+      // Normalize the result to ensure bilingual fields are objects
+      const normalizedResult = {
+        ...result,
+        name: ensureBilingualObject(result.name),
+        title: ensureBilingualObject(result.title),
+        companyName: ensureBilingualObject(result.companyName),
+        address: ensureBilingualObject(result.address),
+      };
+
+      setAnalysisResult(normalizedResult);
     } catch (error) {
       console.error("AI analysis failed:", error);
       toast({
@@ -171,7 +193,7 @@ export default function CardScanner() {
           throw new Error("Front image failed to upload.");
         }
 
-        // 2. Prepare data for Firestore
+        // 2. Prepare data for Firestore, using the (potentially edited) analysisResult
         const cardData = {
             userId: user.uid,
             ...analysisResult,
@@ -200,7 +222,26 @@ export default function CardScanner() {
     } finally {
         setIsSaving(false);
     }
-};
+  };
+
+  const handleInputChange = (field: keyof AnalysisResult, value: any) => {
+    if (analysisResult) {
+      setAnalysisResult({ ...analysisResult, [field]: value });
+    }
+  };
+
+  const handleBilingualChange = (field: 'name' | 'title' | 'companyName' | 'address', lang: 'en' | 'zh', value: string) => {
+      if (analysisResult) {
+          const currentBilingualValue = analysisResult[field];
+          setAnalysisResult({
+              ...analysisResult,
+              [field]: {
+                  ...currentBilingualValue,
+                  [lang]: value,
+              },
+          });
+      }
+  };
   
   const renderCaptureUI = () => {
     if (analysisResult) return null;
@@ -255,10 +296,42 @@ export default function CardScanner() {
     return null;
   }
   
-  const getLocalizedValue = (field?: { en: string; zh: string }) => {
-    if (!field) return '';
-    return field[language] || field.en || '';
-  };
+  const renderBilingualTabs = (field: 'name' | 'title' | 'companyName' | 'address', label: string) => {
+    if (!analysisResult) return null;
+    const value = analysisResult[field];
+
+    return (
+         <div className="space-y-2">
+            <Label className="flex items-center gap-2 text-muted-foreground">
+                {field === 'name' && <User />}
+                {field === 'title' && <Briefcase />}
+                {field === 'companyName' && <Building />}
+                {field === 'address' && <MapPin />}
+                {label}
+            </Label>
+            <Tabs defaultValue="en" className="w-full">
+                <TabsList className="inline-grid grid-cols-2">
+                    <TabsTrigger value="en">English</TabsTrigger>
+                    <TabsTrigger value="zh">繁體中文</TabsTrigger>
+                </TabsList>
+                <TabsContent value="en">
+                    <Input 
+                      value={value.en}
+                      onChange={(e) => handleBilingualChange(field, 'en', e.target.value)}
+                      placeholder={`${label} (English)`}
+                    />
+                </TabsContent>
+                <TabsContent value="zh">
+                    <Input 
+                      value={value.zh}
+                      onChange={(e) => handleBilingualChange(field, 'zh', e.target.value)}
+                      placeholder={`${label} (繁體中文)`}
+                    />
+                </TabsContent>
+            </Tabs>
+        </div>
+    )
+  }
 
   return (
     <Card>
@@ -303,44 +376,28 @@ export default function CardScanner() {
         {renderCaptureUI()}
 
         {analysisResult && (
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 space-y-6">
             <h3 className="text-lg font-headline font-semibold">{t('aiAnalysisResults')}</h3>
+            
+            {renderBilingualTabs('name', t('fullName'))}
+            {renderBilingualTabs('title', t('jobTitle'))}
+            {renderBilingualTabs('companyName', t('companyName'))}
+            {renderBilingualTabs('address', t('address'))}
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label htmlFor="name" className="flex items-center gap-2 text-muted-foreground"><User />{t('fullName')}</Label>
-                <Input id="name" defaultValue={getLocalizedValue(analysisResult.name)} readOnly />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="title" className="flex items-center gap-2 text-muted-foreground"><Briefcase />{t('jobTitle')}</Label>
-                <Input id="title" defaultValue={getLocalizedValue(analysisResult.title)} readOnly />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="companyName" className="flex items-center gap-2 text-muted-foreground"><Building />{t('companyName')}</Label>
-              <Input id="companyName" defaultValue={getLocalizedValue(analysisResult.companyName)} readOnly />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
                   <Label htmlFor="phone" className="flex items-center gap-2 text-muted-foreground"><Phone />{t('phone')}</Label>
-                  <Input id="phone" defaultValue={analysisResult.phone} readOnly />
+                  <Input id="phone" value={analysisResult.phone} onChange={(e) => handleInputChange('phone', e.target.value)} />
               </div>
               <div className="space-y-1">
                   <Label htmlFor="email" className="flex items-center gap-2 text-muted-foreground"><Mail />{t('email')}</Label>
-                  <Input id="email" defaultValue={analysisResult.email} readOnly />
+                  <Input id="email" type="email" value={analysisResult.email} onChange={(e) => handleInputChange('email', e.target.value)} />
               </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="address" className="flex items-center gap-2 text-muted-foreground"><MapPin />{t('address')}</Label>
-              <Input id="address" defaultValue={getLocalizedValue(analysisResult.address)} readOnly />
             </div>
 
             <div>
               <Label htmlFor="companyDescription">{t('companyInformation')}</Label>
-              <Textarea id="companyDescription" defaultValue={analysisResult.companyDescription} readOnly rows={4} />
+              <Textarea id="companyDescription" value={analysisResult.companyDescription} readOnly rows={4} />
             </div>
              <div>
               <Label htmlFor="notes">{t('yourNotes')}</Label>
