@@ -2,7 +2,7 @@
 'use client';
 
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { Camera, RefreshCw, Upload, Loader2, Wand2 } from 'lucide-react';
+import { Camera, RefreshCw, Upload, Loader2, Wand2, User, Briefcase, Building, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
@@ -15,7 +15,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useTranslation } from '@/hooks/use-translation';
 
 type AnalysisResult = {
+  name: string;
+  title: string;
   companyName: string;
+  phone: string;
+  email: string;
   companyDescription: string;
 };
 
@@ -171,13 +175,37 @@ export default function CardScanner() {
         {analysisResult && (
           <div className="mt-6 space-y-4">
             <h3 className="text-lg font-headline font-semibold">{t('aiAnalysisResults')}</h3>
-            <div>
-              <Label htmlFor="companyName">{t('companyName')}</Label>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="name" className="flex items-center gap-2 text-muted-foreground"><User />{t('fullName')}</Label>
+                <Input id="name" value={analysisResult.name} readOnly />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="title" className="flex items-center gap-2 text-muted-foreground"><Briefcase />{t('jobTitle')}</Label>
+                <Input id="title" value={analysisResult.title} readOnly />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="companyName" className="flex items-center gap-2 text-muted-foreground"><Building />{t('companyName')}</Label>
               <Input id="companyName" value={analysisResult.companyName} readOnly />
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                  <Label htmlFor="phone" className="flex items-center gap-2 text-muted-foreground"><Phone />{t('phone')}</Label>
+                  <Input id="phone" value={analysisResult.phone} readOnly />
+              </div>
+              <div className="space-y-1">
+                  <Label htmlFor="email" className="flex items-center gap-2 text-muted-foreground"><Mail />{t('email')}</Label>
+                  <Input id="email" value={analysisResult.email} readOnly />
+              </div>
+            </div>
+
             <div>
               <Label htmlFor="companyDescription">{t('companyInformation')}</Label>
-              <Textarea id="companyDescription" value={analysisResult.companyDescription} readOnly rows={5} />
+              <Textarea id="companyDescription" value={analysisResult.companyDescription} readOnly rows={4} />
             </div>
              <div>
               <Label htmlFor="notes">{t('yourNotes')}</Label>
