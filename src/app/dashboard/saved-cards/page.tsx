@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/context/AuthContext';
 import { getFirebase } from '@/lib/firebase';
-import { collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -43,9 +43,18 @@ export default function SavedCardsPage() {
       try {
         const { db } = await getFirebase();
         const cardsCollection = collection(db, 'businessCards');
-        const q = query(cardsCollection, where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+        // The query now only filters by userId, avoiding the need for a composite index.
+        const q = query(cardsCollection, where('userId', '==', user.uid));
         const querySnapshot = await getDocs(q);
         const fetchedCards = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BusinessCard));
+        
+        // Sorting is now done on the client-side after fetching.
+        fetchedCards.sort((a, b) => {
+            const dateA = a.createdAt ? (a.createdAt as Timestamp).toDate().getTime() : 0;
+            const dateB = b.createdAt ? (b.createdAt as Timestamp).toDate().getTime() : 0;
+            return dateB - dateA; // Sort descending (newest first)
+        });
+
         setCards(fetchedCards);
       } catch (error) {
         console.error("Error fetching cards: ", error);
