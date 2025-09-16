@@ -245,7 +245,7 @@ export default function DigitalCard() {
     };
     
     fetchCardData();
-  }, [user, toast, t]);
+  }, [user]);
   
   const handleSave = async () => {
     if (!user) {
