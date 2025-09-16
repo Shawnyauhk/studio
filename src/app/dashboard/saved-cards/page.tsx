@@ -1,8 +1,9 @@
+
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Building, Calendar, FileText, Loader2 } from 'lucide-react';
+import { Building, Calendar, FileText, Loader2, Briefcase, MapPin } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import type { BusinessCard } from '@/lib/types';
@@ -132,7 +133,12 @@ export default function SavedCardsPage() {
                       <CardTitle className="font-headline text-xl">{card.name}</CardTitle>
                       <div className="text-muted-foreground space-y-2 text-sm">
                         <p className="flex items-center gap-2">
+                          <Briefcase className="h-4 w-4 text-accent flex-shrink-0" />
                           <span className="font-semibold">{card.title}</span>
+                        </p>
+                         <p className="flex items-start gap-2">
+                          <MapPin className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
+                          <span>{card.address}</span>
                         </p>
                         {card.notes && (
                           <p className="flex items-start gap-2">
