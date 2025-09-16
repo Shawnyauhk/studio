@@ -21,9 +21,8 @@ import { getFirebase } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { useTranslation } from '@/hooks/use-translation';
+import { useAuth } from '@/context/AuthContext';
 
-
-const USER_ID = 'user-123'; // Using a mock user ID for now
 
 function DigitalCardPreview({ cardData, onEdit }: { cardData: DigitalCardData, onEdit: () => void }) {
     const { t } = useTranslation();
@@ -208,18 +207,16 @@ export default function DigitalCard() {
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { user } = useAuth();
   
-  const hasFetched = useRef(false);
-
   useEffect(() => {
-    if (hasFetched.current) return;
-    hasFetched.current = true;
-
     const fetchCardData = async () => {
+      if (!user) return;
+      
       setIsLoading(true);
       try {
         const { db } = await getFirebase();
-        const cardDocRef = doc(db, 'digitalCards', USER_ID);
+        const cardDocRef = doc(db, 'digitalCards', user.uid);
         const docSnap = await getDoc(cardDocRef);
 
         if (docSnap.exists()) {
@@ -227,7 +224,7 @@ export default function DigitalCard() {
           setCardData(data);
           setEditData(data);
         } else {
-          // If no data in Firestore, set the mock data and save it.
+          // If no data in Firestore, set the mock data and save it for the new user.
           await setDoc(cardDocRef, mockUserDigitalCard);
           setCardData(mockUserDigitalCard);
           setEditData(mockUserDigitalCard);
@@ -248,9 +245,14 @@ export default function DigitalCard() {
     };
     
     fetchCardData();
-  }, [toast, t]);
+  }, [user, toast, t]);
   
   const handleSave = async () => {
+    if (!user) {
+        toast({ title: "Authentication Error", description: "You must be logged in to save.", variant: "destructive" });
+        return;
+    }
+
     setIsSaving(true);
     let dataToSave = { ...editData };
 
@@ -259,15 +261,15 @@ export default function DigitalCard() {
 
       // Step 1: Upload image only if it's a new one (a data URL)
       if (dataToSave.avatarUrl.startsWith('data:image')) {
-        const storageRef = ref(storage, `avatars/${USER_ID}/profile.png`);
+        const storageRef = ref(storage, `avatars/${user.uid}/profile.png`);
         // Crucially, add 'data_url' to specify the format of the string.
         const snapshot = await uploadString(storageRef, dataToSave.avatarUrl, 'data_url');
         const uploadedUrl = await getDownloadURL(snapshot.ref);
         dataToSave.avatarUrl = uploadedUrl;
       }
       
-      // Step 2: Save data to Firestore
-      const cardDocRef = doc(db, 'digitalCards', USER_ID);
+      // Step 2: Save data to Firestore under the user's uid
+      const cardDocRef = doc(db, 'digitalCards', user.uid);
       await setDoc(cardDocRef, dataToSave, { merge: true });
       
       setCardData(dataToSave);
@@ -285,7 +287,6 @@ export default function DigitalCard() {
             variant: "destructive",
         });
     } finally {
-        // This block is guaranteed to run, ensuring the loading state is always reset.
         setIsSaving(false);
     }
   };
