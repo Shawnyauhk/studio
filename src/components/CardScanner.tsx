@@ -39,7 +39,7 @@ export default function CardScanner() {
   const [captureStage, setCaptureStage] = useState<CaptureStage>('front');
   const { t } = useTranslation();
 
-  const isCameraActive = !frontImage || (frontImage && !backImage && captureStage === 'back');
+  const isCameraActive = captureStage === 'front' || captureStage === 'back';
 
   const stopCamera = useCallback(() => {
     if (videoRef.current && videoRef.current.srcObject) {
@@ -50,7 +50,8 @@ export default function CardScanner() {
   }, []);
 
   const startCamera = useCallback(async () => {
-    stopCamera(); // Stop any existing streams first
+    // Stop any existing streams first to prevent errors on some devices.
+    stopCamera(); 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' }
@@ -95,12 +96,10 @@ export default function CardScanner() {
         
         if (captureStage === 'front') {
           setFrontImage(dataUrl);
-          setCaptureStage('back');
-          stopCamera();
+          setCaptureStage('done'); // Temporarily set to done to stop camera via useEffect
         } else if (captureStage === 'back') {
           setBackImage(dataUrl);
           setCaptureStage('done');
-          stopCamera();
         }
       }
     }
@@ -114,8 +113,10 @@ export default function CardScanner() {
     setCaptureStage('front');
   };
   
-  const proceedToCaptureBack = () => {
+  const proceedToCaptureBack = async () => {
      setCaptureStage('back');
+     // Explicitly start the camera again for the back capture
+     await startCamera();
   }
 
   const handleAnalyze = async () => {
@@ -148,9 +149,9 @@ export default function CardScanner() {
     });
     retakeImage();
   };
-
+  
   const renderCaptureUI = () => {
-    if (captureStage === 'done' || analysisResult) return null;
+    if (analysisResult) return null;
 
     if (!frontImage) {
       return (
@@ -162,13 +163,23 @@ export default function CardScanner() {
       );
     }
 
-    if (frontImage && !backImage) {
+    if (frontImage && !backImage && captureStage !== 'back') {
        return (
         <div className="flex justify-center gap-4 mt-4">
           <Button variant="outline" onClick={retakeImage}>
             <RefreshCw className="mr-2 h-4 w-4" /> {t('retake')}
           </Button>
-          <Button onClick={proceedToCaptureBack} disabled={captureStage === 'back'}>
+          <Button onClick={proceedToCaptureBack}>
+            <Camera className="mr-2 h-4 w-4" /> {t('captureBack')}
+          </Button>
+        </div>
+      );
+    }
+    
+    if (captureStage === 'back') {
+      return (
+        <div className="flex justify-center gap-4 mt-4">
+          <Button onClick={captureImage} disabled={hasCameraPermission !== true}>
             <Camera className="mr-2 h-4 w-4" /> {t('captureBack')}
           </Button>
         </div>
@@ -196,7 +207,7 @@ export default function CardScanner() {
     <Card>
       <CardContent className="p-4 space-y-4">
         <div className="aspect-video w-full bg-muted rounded-md overflow-hidden relative flex items-center justify-center">
-          {isCameraActive ? (
+          {isCameraActive && !analysisResult ? (
              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover"></video>
           ) : (
             <div className='flex items-center justify-center w-full h-full gap-4 p-4 bg-muted/50'>
@@ -217,7 +228,7 @@ export default function CardScanner() {
           <canvas ref={canvasRef} className="hidden"></canvas>
         </div>
         
-        {hasCameraPermission === false && isCameraActive && (
+        {hasCameraPermission === false && isCameraActive && !analysisResult && (
           <Alert variant="destructive">
             <AlertTitle>{t('cameraAccessDeniedTitle')}</AlertTitle>
             <AlertDescription>
