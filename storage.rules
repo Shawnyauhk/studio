@@ -3,13 +3,13 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     // Rule for user avatars
-    // Allow read and write access only for the authenticated user to their own avatar folder.
+    // Path: /avatars/{userId}/<fileName>
     match /avatars/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Rule for business card images
-    // Allow read and write access only for the authenticated user to their own business cards folder.
+    // Rule for scanned business cards
+    // Path: /businessCards/{userId}/<fileName>
     match /businessCards/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
