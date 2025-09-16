@@ -4,11 +4,21 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Logo from '@/components/Logo';
-import { Camera, LogIn } from 'lucide-react';
+import { Camera, Languages } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // A simple SVG for the Google icon
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -23,7 +33,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function Home() {
   const { user, loading, signInWithGoogle } = useAuth();
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, setLanguage, language } = useTranslation();
 
   useEffect(() => {
     if (!loading && user) {
@@ -50,7 +60,22 @@ export default function Home() {
 
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center p-8 bg-background">
-      <div className="absolute top-4 right-4 md:top-8 md:right-8">
+      <div className="absolute top-4 right-4 md:top-8 md:right-8 flex items-center gap-2">
+         <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Languages className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+               <DropdownMenuItem onClick={() => setLanguage('en')}>
+                  English {language === 'en' && <span className="ml-auto">✔</span>}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLanguage('zh')}>
+                  繁體中文 {language === 'zh' && <span className="ml-auto">✔</span>}
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         <Link href="/dashboard/scan">
           <Button variant="default">
             <Camera className="mr-2 h-4 w-4" />

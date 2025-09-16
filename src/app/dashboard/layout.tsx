@@ -18,12 +18,20 @@ export default function DashboardLayout({
     }
   }, [user, loading, router]);
 
-  if (loading || !user) {
+  // If we're not authenticated, we'll be redirected, so we don't need to show a loading screen.
+  // We only show a loading screen if the auth state is still loading.
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <p>Loading...</p>
       </div>
     );
+  }
+
+  // If there's no user, the effect will trigger a redirect, so we can return null or a minimal loader
+  // to prevent rendering the children for a split second before the redirect happens.
+  if (!user) {
+    return null; 
   }
 
   return (
