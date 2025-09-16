@@ -1,17 +1,19 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allows signed-in users to read from the collection,
-    // as the front-end query will filter by their specific userId.
-    // Write permissions remain strict to the document owner.
-    match /businessCards/{cardId} {
+
+    // Rule for business cards collection
+    // Allows any authenticated user to read, but they can only query their own cards via front-end logic.
+    // Write access is restricted to the owner of the card data.
+    match /businessCards/{docId} {
       allow read: if request.auth != null;
-      allow create, update, delete: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow create, update, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
-    // Allows a user to read, create, and update their own digital card document,
-    // where the document ID matches their user ID.
+    // Rule for digital business cards
+    // Allows a user to read, create, and update their own digital card.
     match /digitalCards/{userId} {
       allow read, create, update: if request.auth != null && request.auth.uid == userId;
     }
