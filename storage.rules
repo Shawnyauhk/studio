@@ -2,16 +2,14 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Rule for user avatars
-    // Path: /avatars/{userId}/<fileName>
-    match /avatars/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // Business card images: a user can only read/write their own cards.
+    match /businessCards/{userId}/{allPaths=**} {
+      allow read, write, delete: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Rule for scanned business cards
-    // Path: /businessCards/{userId}/<fileName>
-    match /businessCards/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // User avatars: a user can only read/write their own avatar.
+    match /avatars/{userId}/{allPaths=**} {
+      allow read, write, delete: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
