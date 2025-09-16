@@ -158,10 +158,9 @@ export default function SavedCardsPage() {
 
     if (regionFilter !== 'all') {
         filtered = filtered.filter(card => {
-            const addressEn = (typeof card.address === 'object' ? card.address?.en : card.address) || '';
+            const addressEn = ((typeof card.address === 'object' ? card.address?.en : card.address) || '').toLowerCase();
             const addressZh = (typeof card.address === 'object' ? card.address?.zh : '') || '';
-            // A simple check is enough since district names are unique
-            return addressEn.toLowerCase().includes(regionFilter.toLowerCase()) || addressZh.includes(regionFilter);
+            return addressEn.includes(regionFilter.toLowerCase()) || addressZh.includes(regionFilter);
         });
     }
 
@@ -180,22 +179,24 @@ export default function SavedCardsPage() {
   }, [cards, searchTerm, sortOption, language, regionFilter]);
   
   const availableDistricts = useMemo(() => {
-    const allAddressesEn = cards.map(card => {
-        return (typeof card.address === 'object' ? card.address?.en : card.address) || '';
-    }).join(' ').toLowerCase();
-
-    const allAddressesZh = cards.map(card => {
-        return (typeof card.address === 'object' ? card.address?.zh : '') || '';
-    }).join(' ');
-
     const available: { [key: string]: string[] } = {};
+    const foundDistrictsSet = new Set<string>();
+
+    cards.forEach(card => {
+        const addressEn = ((typeof card.address === 'object' ? card.address?.en : card.address) || '').toLowerCase();
+        const addressZh = (typeof card.address === 'object' ? card.address?.zh : '') || '';
+
+        Object.values(hongKongDistricts).flat().forEach(district => {
+            if (addressEn.includes(district.toLowerCase()) || addressZh.includes(district)) {
+                foundDistrictsSet.add(district);
+            }
+        });
+    });
 
     Object.entries(hongKongDistricts).forEach(([groupName, districts]) => {
-        const foundDistricts = districts.filter(district => 
-            allAddressesEn.includes(district.toLowerCase()) || allAddressesZh.includes(district)
-        );
-        if (foundDistricts.length > 0) {
-            available[groupName] = foundDistricts;
+        const foundInGroup = districts.filter(d => foundDistrictsSet.has(d));
+        if (foundInGroup.length > 0) {
+            available[groupName] = foundInGroup;
         }
     });
 
