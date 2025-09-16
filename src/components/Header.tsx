@@ -93,23 +93,27 @@ export default function Header() {
             </div>
           </div>
           <Separator />
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <Languages className="mr-2 h-4 w-4" />
-              <span>{t('language')}</span>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuPortal>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem onClick={() => setLanguage('en')}>
-                  English {language === 'en' && <span className="ml-auto">✔</span>}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLanguage('zh')}>
-                  繁體中文 {language === 'zh' && <span className="ml-auto">✔</span>}
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuPortal>
-          </DropdownMenuSub>
-          <Button variant="ghost" onClick={logout} className="w-full justify-start">
+          {/* The DropdownMenu wrapper is necessary here to provide context for DropdownMenuSub */}
+          <DropdownMenu>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="w-full justify-start px-2 py-1.5 text-sm font-normal">
+                <Languages className="mr-2 h-4 w-4" />
+                <span>{t('language')}</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem onClick={() => setLanguage('en')}>
+                    English {language === 'en' && <span className="ml-auto">✔</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLanguage('zh')}>
+                    繁體中文 {language === 'zh' && <span className="ml-auto">✔</span>}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
+          </DropdownMenu>
+
+          <Button variant="ghost" onClick={logout} className="w-full justify-start px-2 py-1.5 text-sm font-normal">
             <LogOut className="mr-2 h-4 w-4" />
             <span>{t('logOut')}</span>
           </Button>
