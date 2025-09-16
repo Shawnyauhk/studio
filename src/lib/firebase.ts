@@ -1,6 +1,6 @@
 // src/lib/firebase.ts
 import { initializeApp, getApps, getApp, type FirebaseApp, type FirebaseOptions } from 'firebase/app';
-import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, persistentLocalCache, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
 const firebaseConfig: FirebaseOptions = {
@@ -13,18 +13,30 @@ const firebaseConfig: FirebaseOptions = {
 };
 
 // --- Firebase App Initialization ---
-let app: FirebaseApp;
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
+// Ensures the app is initialized only once.
+const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+
+// --- Firestore and Storage Initialization ---
+// These services are now initialized using the recommended modular functions.
+let db: Firestore;
+let storage: FirebaseStorage;
+
+try {
+  // Use initializeFirestore for advanced settings like offline persistence.
+  // This is the modern, recommended way for Firebase v9+ and helps prevent race conditions.
+  db = initializeFirestore(app, {
+    cache: persistentLocalCache(/* tabManager: */{}),
+  });
+  storage = getStorage(app);
+} catch (e) {
+  // Fallback for environments where persistence might fail (e.g., certain server-side contexts)
+  console.error("Firebase persistence initialization failed, falling back to default.", e);
+  db = getFirestore(app);
+  storage = getStorage(app);
 }
 
-const db: Firestore = getFirestore(app);
-const storage: FirebaseStorage = getStorage(app);
-
-// Asynchronous getter for Firebase services to ensure initialization is complete.
-// Although initialization is synchronous here, this pattern can be useful for more complex setups.
+// Asynchronous getter to ensure services are ready before use.
+// While initialization is now more robust, this pattern remains a good practice.
 export const getFirebase = async () => {
   return { app, db, storage };
 };
