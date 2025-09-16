@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -8,6 +9,8 @@ import { cn } from '@/lib/utils';
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { Button } from './ui/button';
@@ -89,6 +92,9 @@ export default function Header() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[240px]">
+                <SheetHeader>
+                   <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
+                </SheetHeader>
                 <div className="p-4">
                   <Link href="/dashboard" className="flex items-center gap-2 mb-8" onClick={() => setSheetOpen(false)}>
                     <Logo className="h-8 w-8" />
