@@ -26,7 +26,6 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 const navItems = [
   { href: '/dashboard', label: 'My Card', icon: User },
-  { href: '/dashboard/scan', label: 'Scan Card', icon: Camera },
   { href: '/dashboard/saved-cards', label: 'Saved Cards', icon: HardDrive },
 ];
 
