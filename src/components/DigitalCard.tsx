@@ -211,7 +211,10 @@ export default function DigitalCard() {
   
   useEffect(() => {
     const fetchCardData = async () => {
-      if (!user) return;
+      if (!user) {
+        setIsLoading(false);
+        return;
+      };
       
       setIsLoading(true);
       try {
@@ -224,21 +227,25 @@ export default function DigitalCard() {
           setCardData(data);
           setEditData(data);
         } else {
-          // If no data in Firestore, set the mock data and save it for the new user.
-          await setDoc(cardDocRef, mockUserDigitalCard);
+          // If no data exists, it's a new user.
+          // 1. Set local state to mock data so the UI displays something immediately.
           setCardData(mockUserDigitalCard);
           setEditData(mockUserDigitalCard);
+          // 2. Silently try to save this mock data to Firestore for the new user.
+          // We don't await this or handle errors with a toast because it's a background sync.
+          // If it fails, the user can still edit and save, which will trigger the full save flow.
+          setDoc(cardDocRef, mockUserDigitalCard).catch(console.error);
         }
       } catch (error) {
-        console.error("Failed to fetch or set data in Firestore:", error);
+        console.error("Failed to fetch data from Firestore:", error);
+        // Fallback to mock data on read error, but show a toast this time.
+        setCardData(mockUserDigitalCard);
+        setEditData(mockUserDigitalCard);
         toast({
             title: t('fetchDataErrorTitle'),
             description: t('fetchDataErrorDescription'),
             variant: "destructive",
         });
-        // Fallback to mock data on error
-        setCardData(mockUserDigitalCard);
-        setEditData(mockUserDigitalCard);
       } finally {
         setIsLoading(false);
       }
