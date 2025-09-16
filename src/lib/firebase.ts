@@ -18,32 +18,50 @@ let db: Firestore;
 let storage: FirebaseStorage;
 let auth: Auth;
 
-if (!getApps().length) {
-  try {
-    app = initializeApp(firebaseConfig);
-    db = initializeFirestore(app, {
-      cache: persistentLocalCache({}),
-    });
-    storage = getStorage(app);
-    auth = getAuth(app);
-  } catch (e) {
-    console.error("Firebase initialization failed:", e);
-    // Fallback to simpler initialization if advanced features fail
-    app = initializeApp(firebaseConfig);
+// This function can be called multiple times, but will only initialize Firebase once.
+function initializeFirebase() {
+  if (getApps().length === 0) {
+    try {
+      app = initializeApp(firebaseConfig);
+      // Use initializeFirestore for enabling persistence if it's a key feature.
+      // Note: This might have implications in server environments.
+      if (typeof window !== 'undefined') {
+        db = initializeFirestore(app, {
+          cache: persistentLocalCache({}),
+        });
+      } else {
+        db = getFirestore(app);
+      }
+      storage = getStorage(app);
+      auth = getAuth(app);
+    } catch (e) {
+      console.error("Firebase initialization failed:", e);
+      // Fallback for environments where persistence might fail
+      if (!getApps().length) {
+         app = initializeApp(firebaseConfig);
+      } else {
+         app = getApp();
+      }
+      db = getFirestore(app);
+      storage = getStorage(app);
+      auth = getAuth(app);
+    }
+  } else {
+    app = getApp();
     db = getFirestore(app);
     storage = getStorage(app);
     auth = getAuth(app);
   }
-} else {
-  app = getApp();
-  db = getFirestore(app);
-  storage = getStorage(app);
-  auth = getAuth(app);
 }
+
+// Initialize Firebase on module load.
+initializeFirebase();
 
 
 export const getFirebase = async () => {
+  // The instances are already initialized, just return them.
   return { app, db, storage, auth };
 };
 
+// Export the initialized instances for direct use.
 export { app, db, storage, auth };
