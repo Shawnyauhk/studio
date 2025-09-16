@@ -180,16 +180,20 @@ export default function SavedCardsPage() {
   }, [cards, searchTerm, sortOption, language, regionFilter]);
   
   const availableDistricts = useMemo(() => {
-    const allAddresses = cards.map(card => {
-        const addressEn = (typeof card.address === 'object' ? card.address?.en : card.address) || '';
-        const addressZh = (typeof card.address === 'object' ? card.address?.zh : '') || '';
-        return `${addressEn} ${addressZh}`;
+    const allAddressesEn = cards.map(card => {
+        return (typeof card.address === 'object' ? card.address?.en : card.address) || '';
     }).join(' ').toLowerCase();
+
+    const allAddressesZh = cards.map(card => {
+        return (typeof card.address === 'object' ? card.address?.zh : '') || '';
+    }).join(' ');
 
     const available: { [key: string]: string[] } = {};
 
     Object.entries(hongKongDistricts).forEach(([groupName, districts]) => {
-        const foundDistricts = districts.filter(district => allAddresses.includes(district.toLowerCase()));
+        const foundDistricts = districts.filter(district => 
+            allAddressesEn.includes(district.toLowerCase()) || allAddressesZh.includes(district)
+        );
         if (foundDistricts.length > 0) {
             available[groupName] = foundDistricts;
         }
