@@ -1,20 +1,23 @@
 'use client';
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Building, Calendar, FileText } from 'lucide-react';
+import { Building, Calendar, FileText, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { mockBusinessCards } from '@/lib/mock-data';
 import type { BusinessCard } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
+import { useAuth } from '@/context/AuthContext';
+import { getFirebase } from '@/lib/firebase';
+import { collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
-// Helper function to group cards by company
+
 const groupCardsByCompany = (cards: BusinessCard[]) => {
   return cards.reduce((acc, card) => {
-    const company = card.company || 'Uncategorized';
+    const company = card.companyName || 'Uncategorized';
     if (!acc[company]) {
       acc[company] = [];
     }
@@ -25,10 +28,63 @@ const groupCardsByCompany = (cards: BusinessCard[]) => {
 
 export default function SavedCardsPage() {
   const { t } = useTranslation();
-  const groupedCards = useMemo(() => groupCardsByCompany(mockBusinessCards), []);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [cards, setCards] = useState<BusinessCard[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCards = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      };
+
+      try {
+        const { db } = await getFirebase();
+        const cardsCollection = collection(db, 'businessCards');
+        const q = query(cardsCollection, where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+        const querySnapshot = await getDocs(q);
+        const fetchedCards = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BusinessCard));
+        setCards(fetchedCards);
+      } catch (error) {
+        console.error("Error fetching cards: ", error);
+        toast({
+          title: "Error fetching cards",
+          description: "Could not retrieve your saved cards. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCards();
+  }, [user, toast]);
+
+  const groupedCards = useMemo(() => groupCardsByCompany(cards), [cards]);
   const companies = useMemo(() => Object.keys(groupedCards), [groupedCards]);
 
-  if (mockBusinessCards.length === 0) {
+  const formatDate = (timestamp: BusinessCard['createdAt']) => {
+    if (timestamp instanceof Date) {
+      return timestamp;
+    }
+    if (timestamp && 'seconds' in timestamp) {
+      return new Timestamp(timestamp.seconds, timestamp.nanoseconds).toDate();
+    }
+    return new Date();
+  };
+
+  if (isLoading) {
+     return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="ml-4">Loading saved cards...</p>
+      </div>
+    );
+  }
+
+  if (cards.length === 0) {
     return (
         <div className="text-center py-12">
             <h3 className="text-xl font-semibold">{t('noCardsFound')}</h3>
@@ -59,8 +115,8 @@ export default function SavedCardsPage() {
                 {groupedCards[company].map((card) => (
                    <Card key={card.id} className="flex flex-col overflow-hidden hover:shadow-lg transition-shadow">
                     <CardHeader>
-                      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-t-lg">
-                        <Image src={card.imageUrl} alt={`Card of ${card.name}`} fill className="object-cover" data-ai-hint="business card"/>
+                      <div className="relative aspect-video w-full overflow-hidden rounded-t-lg">
+                        <Image src={card.cardFrontImageUrl} alt={`Card of ${card.name}`} fill className="object-cover" data-ai-hint="business card"/>
                       </div>
                     </CardHeader>
                     <CardContent className="flex-1 space-y-3">
@@ -92,7 +148,7 @@ export default function SavedCardsPage() {
                     <CardFooter className="flex justify-between items-center text-xs text-muted-foreground bg-slate-50 p-3">
                        <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {t('added')} {formatDistanceToNow(card.createdAt, { addSuffix: true })}
+                          {t('added')} {formatDistanceToNow(formatDate(card.createdAt), { addSuffix: true })}
                        </div>
                        <Button variant="link" size="sm" asChild className="p-0 h-auto">
                           <Link href="#">{t('viewDetails')}</Link>

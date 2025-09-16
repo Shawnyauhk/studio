@@ -1,3 +1,4 @@
+
 {
   "loading": "載入中",
   "scanCard": "掃描名片",
@@ -64,5 +65,6 @@
   "saveSuccessTitle": "儲存成功",
   "saveSuccessDescription": "您的數位名片已成功更新。",
   "unknownErrorTitle": "發生未知錯誤",
-  "unknownErrorDescription": "儲存過程中發生預期之外的錯誤。請檢查您的 Firebase 安全規則是否已部署。"
+  "unknownErrorDescription": "儲存過程中發生預期之外的錯誤。請檢查您的 Firebase 安全規則是否已部署。",
+  "savedCardsDescription": "在這裡查看您所有掃描過的名片。"
 }

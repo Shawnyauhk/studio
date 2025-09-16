@@ -13,6 +13,11 @@ import { useToast } from '@/hooks/use-toast';
 import { analyzeCardAndSearchCompanyInfo } from '@/ai/flows/analyze-card-and-search-company-info';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useTranslation } from '@/hooks/use-translation';
+import { useAuth } from '@/context/AuthContext';
+import { getFirebase } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { useRouter } from 'next/navigation';
 
 type AnalysisResult = {
   name: string;
@@ -32,12 +37,16 @@ export default function CardScanner() {
   const [frontImage, setFrontImage] = useState<string | null>(null);
   const [backImage, setBackImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [notes, setNotes] = useState('');
   const { toast } = useToast();
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [captureStage, setCaptureStage] = useState<CaptureStage>('front');
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const router = useRouter();
+
 
   const isCameraActive = captureStage === 'front' || captureStage === 'back';
 
@@ -115,7 +124,6 @@ export default function CardScanner() {
   
   const proceedToCaptureBack = async () => {
      setCaptureStage('back');
-     // Explicitly start the camera again for the back capture
      await startCamera();
   }
 
@@ -141,14 +149,66 @@ export default function CardScanner() {
     }
   };
 
-  const handleSave = () => {
-    // In a real app, this would save to Firebase Firestore and Storage
-    toast({
-      title: t('cardSavedTitle'),
-      description: t('cardSavedDescription'),
-    });
-    retakeImage();
-  };
+  const handleSave = async () => {
+    if (!analysisResult || !user) {
+        toast({
+            title: "Cannot Save",
+            description: "No analysis result or user not logged in.",
+            variant: "destructive"
+        });
+        return;
+    }
+
+    setIsSaving(true);
+    try {
+        const { db, storage } = await getFirebase();
+        const cardId = new Date().getTime().toString(); 
+
+        // 1. Upload images to Storage
+        const uploadImage = async (dataUrl: string | null, side: 'front' | 'back') => {
+            if (!dataUrl) return undefined;
+            const storageRef = ref(storage, `businessCards/${user.uid}/${cardId}_${side}.jpg`);
+            const snapshot = await uploadString(storageRef, dataUrl, 'data_url');
+            return getDownloadURL(snapshot.ref);
+        };
+        
+        const cardFrontImageUrl = await uploadImage(frontImage, 'front');
+        const cardBackImageUrl = await uploadImage(backImage, 'back');
+
+        if (!cardFrontImageUrl) {
+          throw new Error("Front image failed to upload.");
+        }
+
+        // 2. Prepare data for Firestore
+        const cardData = {
+            userId: user.uid,
+            ...analysisResult,
+            notes,
+            cardFrontImageUrl,
+            cardBackImageUrl: cardBackImageUrl || null,
+            createdAt: serverTimestamp(),
+        };
+
+        // 3. Save data to Firestore
+        await addDoc(collection(db, 'businessCards'), cardData);
+
+        toast({
+            title: t('cardSavedTitle'),
+            description: t('cardSavedDescription'),
+        });
+        router.push('/dashboard/saved-cards');
+
+    } catch (error) {
+        console.error("Error saving card: ", error);
+        toast({
+            title: "Save Failed",
+            description: "Could not save the card. Please try again.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsSaving(false);
+    }
+};
   
   const renderCaptureUI = () => {
     if (analysisResult) return null;
@@ -186,7 +246,7 @@ export default function CardScanner() {
       );
     }
 
-    if (frontImage && backImage) {
+    if ((frontImage && captureStage === 'done') || (frontImage && backImage)) {
        return (
         <div className="flex justify-center gap-4 mt-4">
           <Button variant="outline" onClick={retakeImage}>
@@ -223,6 +283,12 @@ export default function CardScanner() {
                    <Image src={backImage} alt="Captured business card back" width={240} height={135} className="object-contain rounded-md border" />
                 </div>
               )}
+               {!frontImage && !backImage && (
+                 <div className="text-muted-foreground text-center">
+                   <Camera className="mx-auto h-12 w-12" />
+                   <p>{t('scanCardInstruction')}</p>
+                 </div>
+               )}
             </div>
           )}
           <canvas ref={canvasRef} className="hidden"></canvas>
@@ -246,47 +312,48 @@ export default function CardScanner() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label htmlFor="name" className="flex items-center gap-2 text-muted-foreground"><User />{t('fullName')}</Label>
-                <Input id="name" value={analysisResult.name} readOnly />
+                <Input id="name" defaultValue={analysisResult.name} readOnly />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="title" className="flex items-center gap-2 text-muted-foreground"><Briefcase />{t('jobTitle')}</Label>
-                <Input id="title" value={analysisResult.title} readOnly />
+                <Input id="title" defaultValue={analysisResult.title} readOnly />
               </div>
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="companyName" className="flex items-center gap-2 text-muted-foreground"><Building />{t('companyName')}</Label>
-              <Input id="companyName" value={analysisResult.companyName} readOnly />
+              <Input id="companyName" defaultValue={analysisResult.companyName} readOnly />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                   <Label htmlFor="phone" className="flex items-center gap-2 text-muted-foreground"><Phone />{t('phone')}</Label>
-                  <Input id="phone" value={analysisResult.phone} readOnly />
+                  <Input id="phone" defaultValue={analysisResult.phone} readOnly />
               </div>
               <div className="space-y-1">
                   <Label htmlFor="email" className="flex items-center gap-2 text-muted-foreground"><Mail />{t('email')}</Label>
-                  <Input id="email" value={analysisResult.email} readOnly />
+                  <Input id="email" defaultValue={analysisResult.email} readOnly />
               </div>
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="address" className="flex items-center gap-2 text-muted-foreground"><MapPin />{t('address')}</Label>
-              <Input id="address" value={analysisResult.address} readOnly />
+              <Input id="address" defaultValue={analysisResult.address} readOnly />
             </div>
 
             <div>
               <Label htmlFor="companyDescription">{t('companyInformation')}</Label>
-              <Textarea id="companyDescription" value={analysisResult.companyDescription} readOnly rows={4} />
+              <Textarea id="companyDescription" defaultValue={analysisResult.companyDescription} readOnly rows={4} />
             </div>
              <div>
               <Label htmlFor="notes">{t('yourNotes')}</Label>
               <Textarea id="notes" placeholder={t('notesPlaceholder')} value={notes} onChange={(e) => setNotes(e.target.value)} />
             </div>
             <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={retakeImage}>{t('startOver')}</Button>
-                <Button onClick={handleSave}>
-                  <Upload className="mr-2 h-4 w-4" /> {t('saveCard')}
+                <Button variant="outline" onClick={retakeImage} disabled={isSaving}>{t('startOver')}</Button>
+                <Button onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                  {t('saveCard')}
                 </Button>
             </div>
           </div>

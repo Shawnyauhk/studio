@@ -1,18 +1,20 @@
 export type BusinessCard = {
   id: string;
+  userId: string;
   name: string;
   title: string;
-  company: string;
+  companyName: string;
   email: string;
   phone: string;
-  website?: string;
-  notes: string;
-  imageUrl: string;
   address: string;
-  companyInfo?: {
-    description: string;
-  };
-  createdAt: Date;
+  companyDescription: string;
+  notes: string;
+  cardFrontImageUrl: string;
+  cardBackImageUrl?: string;
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  } | Date;
 };
 
 export type DigitalCardData = {
