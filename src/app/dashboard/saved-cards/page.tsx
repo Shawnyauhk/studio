@@ -294,7 +294,7 @@ export default function SavedCardsPage() {
             <p className="text-muted-foreground">{searchTerm ? t('noSearchResults') : t('noCardsFoundDescription')}</p>
         </div>
       ) : (
-      <Accordion type="multiple" defaultValue={companies} className="w-full">
+      <Accordion type="multiple" className="w-full">
         {companies.map((company) => (
           <AccordionItem value={company} key={company}>
             <AccordionTrigger className="text-xl font-semibold">
