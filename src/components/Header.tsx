@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Camera, User, HardDrive, Menu, LogOut, UserCircle } from 'lucide-react';
+import { User, HardDrive, Menu, LogOut, Languages } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { cn } from '@/lib/utils';
 import {
@@ -20,19 +20,25 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { useTranslation } from '@/hooks/use-translation';
 
-
-const navItems = [
-  { href: '/dashboard', label: 'My Card', icon: User },
-  { href: '/dashboard/saved-cards', label: 'Saved Cards', icon: HardDrive },
-];
 
 export default function Header() {
   const pathname = usePathname();
   const [isSheetOpen, setSheetOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { t, setLanguage, language } = useTranslation();
+
+  const navItems = [
+    { href: '/dashboard', label: t('myCard') },
+    { href: '/dashboard/saved-cards', label: t('savedCards') },
+  ];
 
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
@@ -54,10 +60,12 @@ export default function Header() {
             'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
             pathname === item.href
               ? 'bg-primary text-primary-foreground'
+              // Use a more specific selector for hover to avoid overwriting active state
               : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground',
           )}
         >
-          <item.icon className="h-4 w-4" />
+          {item.label === t('myCard') && <User className="h-4 w-4" />}
+          {item.label === t('savedCards') && <HardDrive className="h-4 w-4" />}
           <span>{item.label}</span>
         </Link>
       ))}
@@ -114,9 +122,26 @@ export default function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Languages className="mr-2 h-4 w-4" />
+                    <span>{t('language')}</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem onClick={() => setLanguage('en')}>
+                        English {language === 'en' && <span className="ml-auto">✔</span>}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setLanguage('zh')}>
+                        繁體中文 {language === 'zh' && <span className="ml-auto">✔</span>}
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
+                  <span>{t('logOut')}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

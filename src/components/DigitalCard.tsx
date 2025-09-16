@@ -20,11 +20,13 @@ import {
 import { getFirebase } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 const USER_ID = 'user-123'; // Using a mock user ID for now
 
 function DigitalCardPreview({ cardData, onEdit }: { cardData: DigitalCardData, onEdit: () => void }) {
+    const { t } = useTranslation();
     return (
       <div className="space-y-6">
         <div className="w-full max-w-sm mx-auto bg-card rounded-2xl shadow-2xl p-6 relative overflow-hidden">
@@ -74,14 +76,14 @@ function DigitalCardPreview({ cardData, onEdit }: { cardData: DigitalCardData, o
         </div>
         
         <div className="w-full max-w-sm mx-auto space-y-2">
-            <Button className="w-full justify-start" variant="outline"><QrCode className="mr-2"/> Show Website QR</Button>
-            <Button className="w-full justify-start" variant="outline"><Star className="mr-2"/> Add to Favorites</Button>
-            <Button className="w-full justify-start" variant="outline"><Download className="mr-2"/> Save to Desktop</Button>
-            <Button className="w-full justify-start" variant="outline"><Share2 className="mr-2"/> Share This Page</Button>
+            <Button className="w-full justify-start" variant="outline"><QrCode className="mr-2"/>{t('showWebsiteQR')}</Button>
+            <Button className="w-full justify-start" variant="outline"><Star className="mr-2"/>{t('addToFavorites')}</Button>
+            <Button className="w-full justify-start" variant="outline"><Download className="mr-2"/>{t('saveToDesktop')}</Button>
+            <Button className="w-full justify-start" variant="outline"><Share2 className="mr-2"/>{t('shareThisPage')}</Button>
         </div>
 
         <div className="w-full max-w-sm mx-auto space-y-4">
-          <h3 className="text-center font-headline text-lg">Company Location</h3>
+          <h3 className="text-center font-headline text-lg">{t('companyLocation')}</h3>
           <div className="aspect-video rounded-lg overflow-hidden border">
              <iframe
                 width="100%"
@@ -100,6 +102,7 @@ function DigitalCardPreview({ cardData, onEdit }: { cardData: DigitalCardData, o
 function DigitalCardForm({ cardData, onUpdate, onSave, onCancel, isSaving }: { cardData: DigitalCardData, onUpdate: (data: DigitalCardData) => void, onSave: () => void, onCancel: () => void, isSaving: boolean }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -110,8 +113,8 @@ function DigitalCardForm({ cardData, onUpdate, onSave, onCancel, isSaving }: { c
     if (file) {
       if (file.size > 2 * 1024 * 1024) { // 2MB limit
         toast({
-          title: "檔案太大",
-          description: "請選擇小於 2MB 的圖片。",
+          title: t('fileTooLargeTitle'),
+          description: t('fileTooLargeDescription'),
           variant: "destructive",
         });
         return;
@@ -128,7 +131,7 @@ function DigitalCardForm({ cardData, onUpdate, onSave, onCancel, isSaving }: { c
   return (
     <>
       <DialogHeader>
-        <DialogTitle className="font-headline text-xl">編輯您的詳細資料</DialogTitle>
+        <DialogTitle className="font-headline text-xl">{t('editYourDetails')}</DialogTitle>
       </DialogHeader>
       <div className="space-y-4 py-4">
         <div className="flex items-center gap-4">
@@ -143,7 +146,7 @@ function DigitalCardForm({ cardData, onUpdate, onSave, onCancel, isSaving }: { c
             </div>
             <Button variant="outline" onClick={handleAvatarClick}>
                 <Upload className="mr-2 h-4 w-4" />
-                更換頭像
+                {t('changeAvatar')}
             </Button>
             <input
                 type="file"
@@ -155,42 +158,42 @@ function DigitalCardForm({ cardData, onUpdate, onSave, onCancel, isSaving }: { c
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="name">全名</Label>
+            <Label htmlFor="name">{t('fullName')}</Label>
             <Input id="name" value={cardData.name} onChange={e => onUpdate({...cardData, name: e.target.value})} />
           </div>
           <div>
-            <Label htmlFor="title">職稱 / 職位</Label>
+            <Label htmlFor="title">{t('jobTitle')}</Label>
             <Input id="title" value={cardData.title} onChange={e => onUpdate({...cardData, title: e.target.value})} />
           </div>
         </div>
         <div>
-            <Label htmlFor="company">公司</Label>
+            <Label htmlFor="company">{t('company')}</Label>
             <Input id="company" value={cardData.company} onChange={e => onUpdate({...cardData, company: e.target.value})} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="phone">電話</Label>
+            <Label htmlFor="phone">{t('phone')}</Label>
             <Input id="phone" type="tel" value={cardData.phone} onChange={e => onUpdate({...cardData, phone: e.target.value})} />
           </div>
           <div>
-            <Label htmlFor="email">電子郵件</Label>
+            <Label htmlFor="email">{t('email')}</Label>
             <Input id="email" type="email" value={cardData.email} onChange={e => onUpdate({...cardData, email: e.target.value})} />
           </div>
         </div>
          <div>
-            <Label htmlFor="website">網站</Label>
+            <Label htmlFor="website">{t('website')}</Label>
             <Input id="website" type="url" value={cardData.website} onChange={e => onUpdate({...cardData, website: e.target.value})} />
         </div>
         <div>
-            <Label htmlFor="address">地址</Label>
+            <Label htmlFor="address">{t('address')}</Label>
             <Input id="address" value={cardData.address} onChange={e => onUpdate({...cardData, address: e.target.value})} />
         </div>
       </div>
       <DialogFooter>
-          <Button variant="ghost" onClick={onCancel} disabled={isSaving}>取消</Button>
+          <Button variant="ghost" onClick={onCancel} disabled={isSaving}>{t('cancel')}</Button>
           <Button onClick={onSave} disabled={isSaving}>
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-            儲存變更
+            {t('saveChanges')}
           </Button>
       </DialogFooter>
     </>
@@ -204,6 +207,7 @@ export default function DigitalCard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   const hasFetched = useRef(false);
 
@@ -231,8 +235,8 @@ export default function DigitalCard() {
       } catch (error) {
         console.error("Failed to fetch or set data in Firestore:", error);
         toast({
-            title: "讀取資料失敗",
-            description: "無法從後端讀取您的名片資料。將使用預設資料。",
+            title: t('fetchDataErrorTitle'),
+            description: t('fetchDataErrorDescription'),
             variant: "destructive",
         });
         // Fallback to mock data on error
@@ -244,7 +248,7 @@ export default function DigitalCard() {
     };
     
     fetchCardData();
-  }, [toast]);
+  }, [toast, t]);
   
   const handleSave = async () => {
     setIsSaving(true);
@@ -269,15 +273,15 @@ export default function DigitalCard() {
       setCardData(dataToSave);
       setIsEditing(false);
       toast({
-          title: "儲存成功",
-          description: "您的數位名片已成功更新。",
+          title: t('saveSuccessTitle'),
+          description: t('saveSuccessDescription'),
       });
 
     } catch (error) {
         console.error("An unexpected error occurred during save:", error);
         toast({
-            title: "發生未知錯誤",
-            description: "儲存過程中發生預期之外的錯誤。請檢查您的 Firebase 安全規則是否已部署。",
+            title: t('unknownErrorTitle'),
+            description: t('unknownErrorDescription'),
             variant: "destructive",
         });
     } finally {
@@ -300,7 +304,7 @@ export default function DigitalCard() {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-4">讀取您的數位名片...</p>
+        <p className="ml-4">{t('loadingDigitalCard')}...</p>
       </div>
     );
   }
@@ -322,5 +326,3 @@ export default function DigitalCard() {
     </Dialog>
   );
 }
-
-    

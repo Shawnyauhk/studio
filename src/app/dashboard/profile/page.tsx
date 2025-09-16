@@ -1,12 +1,15 @@
+'use client';
 import DigitalCard from '@/components/DigitalCard';
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   return (
     <div className="space-y-8">
        <div>
-        <h1 className="text-3xl font-headline font-bold">Your Digital Card</h1>
+        <h1 className="text-3xl font-headline font-bold">{t('yourDigitalCard')}</h1>
         <p className="text-muted-foreground">
-          Create and share your personal digital business card.
+          {t('digitalCardDescription')}
         </p>
       </div>
       <DigitalCard />

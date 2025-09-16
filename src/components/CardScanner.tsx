@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeCardAndSearchCompanyInfo } from '@/ai/flows/analyze-card-and-search-company-info';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useTranslation } from '@/hooks/use-translation';
 
 type AnalysisResult = {
   companyName: string;
@@ -27,6 +28,7 @@ export default function CardScanner() {
   const [notes, setNotes] = useState('');
   const { toast } = useToast();
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const { t } = useTranslation();
 
   const startCamera = useCallback(async () => {
     // Stop any existing streams
@@ -47,12 +49,12 @@ export default function CardScanner() {
       console.error("Error accessing camera:", err);
       setHasCameraPermission(false);
       toast({
-        title: "Camera Error",
-        description: "Could not access the camera. Please check your browser permissions.",
+        title: t('cameraErrorTitle'),
+        description: t('cameraErrorDescription'),
         variant: "destructive",
       });
     }
-  }, [toast]);
+  }, [toast, t]);
 
   useEffect(() => {
     startCamera();
@@ -102,8 +104,8 @@ export default function CardScanner() {
     } catch (error) {
       console.error("AI analysis failed:", error);
       toast({
-        title: "AI Analysis Failed",
-        description: "Could not analyze the card. Please try again.",
+        title: t('aiAnalysisFailedTitle'),
+        description: t('aiAnalysisFailedDescription'),
         variant: "destructive",
       });
     } finally {
@@ -114,8 +116,8 @@ export default function CardScanner() {
   const handleSave = () => {
     // In a real app, this would save to Firebase Firestore and Storage
     toast({
-      title: "Card Saved!",
-      description: "The new business card has been added to your portfolio.",
+      title: t('cardSavedTitle'),
+      description: t('cardSavedDescription'),
     });
     // Maybe redirect to dashboard or clear state
     retakeImage();
@@ -135,9 +137,9 @@ export default function CardScanner() {
         
         {hasCameraPermission === false && !imageData && (
           <Alert variant="destructive" className="mt-4">
-            <AlertTitle>Camera Access Denied</AlertTitle>
+            <AlertTitle>{t('cameraAccessDeniedTitle')}</AlertTitle>
             <AlertDescription>
-              Please enable camera permissions in your browser settings to use this feature.
+              {t('cameraAccessDeniedDescription')}
             </AlertDescription>
           </Alert>
         )}
@@ -147,7 +149,7 @@ export default function CardScanner() {
             {imageData ? (
               <>
                 <Button variant="outline" onClick={retakeImage}>
-                  <RefreshCw className="mr-2 h-4 w-4" /> Retake
+                  <RefreshCw className="mr-2 h-4 w-4" /> {t('retake')}
                 </Button>
                 <Button onClick={handleAnalyze} disabled={isAnalyzing}>
                   {isAnalyzing ? (
@@ -155,12 +157,12 @@ export default function CardScanner() {
                   ) : (
                     <Wand2 className="mr-2 h-4 w-4" />
                   )}
-                  Analyze with AI
+                  {t('analyzeWithAI')}
                 </Button>
               </>
             ) : (
               <Button onClick={captureImage} disabled={hasCameraPermission !== true}>
-                <Camera className="mr-2 h-4 w-4" /> Capture Card
+                <Camera className="mr-2 h-4 w-4" /> {t('captureCard')}
               </Button>
             )}
           </div>
@@ -168,23 +170,23 @@ export default function CardScanner() {
 
         {analysisResult && (
           <div className="mt-6 space-y-4">
-            <h3 className="text-lg font-headline font-semibold">AI Analysis Results</h3>
+            <h3 className="text-lg font-headline font-semibold">{t('aiAnalysisResults')}</h3>
             <div>
-              <Label htmlFor="companyName">Company Name</Label>
+              <Label htmlFor="companyName">{t('companyName')}</Label>
               <Input id="companyName" value={analysisResult.companyName} readOnly />
             </div>
             <div>
-              <Label htmlFor="companyDescription">Company Information</Label>
+              <Label htmlFor="companyDescription">{t('companyInformation')}</Label>
               <Textarea id="companyDescription" value={analysisResult.companyDescription} readOnly rows={5} />
             </div>
              <div>
-              <Label htmlFor="notes">Your Notes</Label>
-              <Textarea id="notes" placeholder="Add personal notes here..." value={notes} onChange={(e) => setNotes(e.target.value)} />
+              <Label htmlFor="notes">{t('yourNotes')}</Label>
+              <Textarea id="notes" placeholder={t('notesPlaceholder')} value={notes} onChange={(e) => setNotes(e.target.value)} />
             </div>
             <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={retakeImage}>Start Over</Button>
+                <Button variant="outline" onClick={retakeImage}>{t('startOver')}</Button>
                 <Button onClick={handleSave}>
-                  <Upload className="mr-2 h-4 w-4" /> Save Card
+                  <Upload className="mr-2 h-4 w-4" /> {t('saveCard')}
                 </Button>
             </div>
           </div>

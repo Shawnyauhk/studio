@@ -8,6 +8,7 @@ import { Camera, LogIn } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { useTranslation } from '@/hooks/use-translation';
 
 // A simple SVG for the Google icon
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -22,6 +23,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function Home() {
   const { user, loading, signInWithGoogle } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!loading && user) {
@@ -41,7 +43,7 @@ export default function Home() {
   if (loading || user) {
     return (
        <div className="flex min-h-screen flex-col items-center justify-center">
-         <p>Loading...</p>
+         <p>{t('loading')}...</p>
       </div>
     );
   }
@@ -52,7 +54,7 @@ export default function Home() {
         <Link href="/dashboard/scan">
           <Button variant="default">
             <Camera className="mr-2 h-4 w-4" />
-            Scan Card
+            {t('scanCard')}
           </Button>
         </Link>
       </div>
@@ -63,21 +65,21 @@ export default function Home() {
               <Logo />
             </div>
             <CardTitle className="font-headline text-3xl">BizCard Portfolio</CardTitle>
-            <CardDescription>Your AI-powered business card manager.</CardDescription>
+            <CardDescription>{t('appDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col items-center gap-4">
               <p className="text-center text-muted-foreground">
-                Scan, store, and search your business cards effortlessly.
+                {t('appSubDescription')}
               </p>
                <Button onClick={handleLogin} className="w-full text-lg py-6" size="lg" variant="outline">
                   <GoogleIcon className="mr-2 h-6 w-6" />
-                  Sign in with Google
+                  {t('signInWithGoogle')}
                 </Button>
               <Link href="/dashboard" className="w-full">
                 <Button className="w-full text-lg py-6" size="lg">
                   <LogIn className="mr-2 h-5 w-5" />
-                  Enter Your Workspace
+                  {t('enterWorkspace')}
                   </Button>
               </Link>
             </div>

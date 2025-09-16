@@ -9,6 +9,7 @@ import { mockBusinessCards } from '@/lib/mock-data';
 import type { BusinessCard } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/hooks/use-translation';
 
 // Helper function to group cards by company
 const groupCardsByCompany = (cards: BusinessCard[]) => {
@@ -23,14 +24,15 @@ const groupCardsByCompany = (cards: BusinessCard[]) => {
 };
 
 export default function SavedCardsPage() {
+  const { t } = useTranslation();
   const groupedCards = useMemo(() => groupCardsByCompany(mockBusinessCards), []);
   const companies = useMemo(() => Object.keys(groupedCards), [groupedCards]);
 
   if (mockBusinessCards.length === 0) {
     return (
         <div className="text-center py-12">
-            <h3 className="text-xl font-semibold">No cards found</h3>
-            <p className="text-muted-foreground">Your saved business cards will appear here.</p>
+            <h3 className="text-xl font-semibold">{t('noCardsFound')}</h3>
+            <p className="text-muted-foreground">{t('noCardsFoundDescription')}</p>
         </div>
     );
   }
@@ -38,9 +40,9 @@ export default function SavedCardsPage() {
   return (
     <div className="space-y-8">
        <div>
-        <h1 className="text-3xl font-headline font-bold">Saved Cards</h1>
+        <h1 className="text-3xl font-headline font-bold">{t('savedCards')}</h1>
         <p className="text-muted-foreground">
-          All your scanned business cards, organized by company.
+          {t('savedCardsDescription')}
         </p>
       </div>
       <Accordion type="multiple" defaultValue={companies} className="w-full">
@@ -75,7 +77,7 @@ export default function SavedCardsPage() {
                         )}
                       </div>
                       <div className="pt-2">
-                        <h4 className="font-semibold text-foreground mb-2">Company Location</h4>
+                        <h4 className="font-semibold text-foreground mb-2">{t('companyLocation')}</h4>
                         <div className="aspect-video rounded-md overflow-hidden border">
                           <iframe
                             width="100%"
@@ -90,10 +92,10 @@ export default function SavedCardsPage() {
                     <CardFooter className="flex justify-between items-center text-xs text-muted-foreground bg-slate-50 p-3">
                        <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          Added {formatDistanceToNow(card.createdAt, { addSuffix: true })}
+                          {t('added')} {formatDistanceToNow(card.createdAt, { addSuffix: true })}
                        </div>
                        <Button variant="link" size="sm" asChild className="p-0 h-auto">
-                          <Link href="#">View Details</Link>
+                          <Link href="#">{t('viewDetails')}</Link>
                        </Button>
                     </CardFooter>
                   </Card>
