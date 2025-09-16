@@ -160,6 +160,7 @@ export default function SavedCardsPage() {
         filtered = filtered.filter(card => {
             const addressEn = (typeof card.address === 'object' ? card.address?.en : card.address) || '';
             const addressZh = (typeof card.address === 'object' ? card.address?.zh : '') || '';
+            // A simple check is enough since district names are unique
             return addressEn.toLowerCase().includes(regionFilter.toLowerCase()) || addressZh.includes(regionFilter);
         });
     }
@@ -177,6 +178,25 @@ export default function SavedCardsPage() {
         }
     });
   }, [cards, searchTerm, sortOption, language, regionFilter]);
+  
+  const availableDistricts = useMemo(() => {
+    const allAddresses = cards.map(card => {
+        const addressEn = (typeof card.address === 'object' ? card.address?.en : card.address) || '';
+        const addressZh = (typeof card.address === 'object' ? card.address?.zh : '') || '';
+        return `${addressEn} ${addressZh}`;
+    }).join(' ').toLowerCase();
+
+    const available: { [key: string]: string[] } = {};
+
+    Object.entries(hongKongDistricts).forEach(([groupName, districts]) => {
+        const foundDistricts = districts.filter(district => allAddresses.includes(district.toLowerCase()));
+        if (foundDistricts.length > 0) {
+            available[groupName] = foundDistricts;
+        }
+    });
+
+    return available;
+  }, [cards]);
 
 
   const groupedCards = useMemo(() => groupCardsByCompany(filteredAndSortedCards, language), [filteredAndSortedCards, language]);
@@ -220,7 +240,7 @@ export default function SavedCardsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('allRegions')}</SelectItem>
-              {Object.entries(hongKongDistricts).map(([groupName, districts]) => (
+              {Object.entries(availableDistricts).map(([groupName, districts]) => (
                 <SelectGroup key={groupName}>
                   <SelectLabel>{groupName}</SelectLabel>
                   {districts.map(district => (
