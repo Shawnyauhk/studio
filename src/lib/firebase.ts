@@ -2,6 +2,7 @@
 import { initializeApp, getApps, getApp, type FirebaseApp, type FirebaseOptions } from 'firebase/app';
 import { getFirestore, initializeFirestore, persistentLocalCache, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { getAuth, type Auth } from 'firebase/auth';
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,31 +13,37 @@ const firebaseConfig: FirebaseOptions = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// --- Firebase App Initialization ---
-// Ensures the app is initialized only once.
-const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-
-// --- Firestore and Storage Initialization ---
-// These services are now initialized using the recommended modular functions.
+let app: FirebaseApp;
 let db: Firestore;
 let storage: FirebaseStorage;
+let auth: Auth;
 
-try {
-  // Use initializeFirestore for advanced settings like offline persistence.
-  // This is the modern, recommended way for Firebase v9+ and helps prevent race conditions.
-  db = initializeFirestore(app, {
-    cache: persistentLocalCache(/* tabManager: */{}),
-  });
-  storage = getStorage(app);
-} catch (e) {
-  // Fallback for environments where persistence might fail (e.g., certain server-side contexts)
-  console.error("Firebase persistence initialization failed, falling back to default.", e);
+if (!getApps().length) {
+  try {
+    app = initializeApp(firebaseConfig);
+    db = initializeFirestore(app, {
+      cache: persistentLocalCache({}),
+    });
+    storage = getStorage(app);
+    auth = getAuth(app);
+  } catch (e) {
+    console.error("Firebase initialization failed:", e);
+    // Fallback to simpler initialization if advanced features fail
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    storage = getStorage(app);
+    auth = getAuth(app);
+  }
+} else {
+  app = getApp();
   db = getFirestore(app);
   storage = getStorage(app);
+  auth = getAuth(app);
 }
 
-// Asynchronous getter to ensure services are ready before use.
-// While initialization is now more robust, this pattern remains a good practice.
+
 export const getFirebase = async () => {
-  return { app, db, storage };
+  return { app, db, storage, auth };
 };
+
+export { app, db, storage, auth };
