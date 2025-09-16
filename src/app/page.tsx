@@ -76,12 +76,6 @@ export default function Home() {
                   <GoogleIcon className="mr-2 h-6 w-6" />
                   {t('signInWithGoogle')}
                 </Button>
-              <Link href="/dashboard" className="w-full">
-                <Button className="w-full text-lg py-6" size="lg">
-                  <LogIn className="mr-2 h-5 w-5" />
-                  {t('enterWorkspace')}
-                  </Button>
-              </Link>
             </div>
           </CardContent>
         </Card>
