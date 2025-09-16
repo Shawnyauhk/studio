@@ -33,6 +33,7 @@ const AnalyzeCardAndSearchCompanyInfoOutputSchema = z.object({
   companyName: z.string().describe('The name of the company on the card.'),
   phone: z.string().describe("The contact phone number on the card."),
   email: z.string().describe("The contact email address on the card."),
+  address: z.string().describe("The full address found on the card."),
   companyDescription: z
     .string()
     .describe('A description of the company and its background, based on a web search.'),
@@ -61,6 +62,7 @@ const prompt = ai.definePrompt({
     *   Company Name
     *   Phone Number
     *   Email Address
+    *   Address
 
 3.  **Conduct Research**: After identifying the Company Name, perform a web search to find public information about the company. Summarize its business, mission, or any relevant background information into a concise description.
 

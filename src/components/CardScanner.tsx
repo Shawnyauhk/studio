@@ -2,7 +2,7 @@
 'use client';
 
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { Camera, RefreshCw, Upload, Loader2, Wand2, User, Briefcase, Building, Phone, Mail } from 'lucide-react';
+import { Camera, RefreshCw, Upload, Loader2, Wand2, User, Briefcase, Building, Phone, Mail, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
@@ -20,6 +20,7 @@ type AnalysisResult = {
   companyName: string;
   phone: string;
   email: string;
+  address: string;
   companyDescription: string;
 };
 
@@ -256,6 +257,11 @@ export default function CardScanner() {
                   <Label htmlFor="email" className="flex items-center gap-2 text-muted-foreground"><Mail />{t('email')}</Label>
                   <Input id="email" value={analysisResult.email} readOnly />
               </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="address" className="flex items-center gap-2 text-muted-foreground"><MapPin />{t('address')}</Label>
+              <Input id="address" value={analysisResult.address} readOnly />
             </div>
 
             <div>
