@@ -23,27 +23,36 @@ type AnalysisResult = {
   companyDescription: string;
 };
 
+type CaptureStage = 'front' | 'back' | 'done';
+
 export default function CardScanner() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [imageData, setImageData] = useState<string | null>(null);
+  const [frontImage, setFrontImage] = useState<string | null>(null);
+  const [backImage, setBackImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [notes, setNotes] = useState('');
   const { toast } = useToast();
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [captureStage, setCaptureStage] = useState<CaptureStage>('front');
   const { t } = useTranslation();
 
-  const startCamera = useCallback(async () => {
-    // Stop any existing streams
+  const isCameraActive = !frontImage || (frontImage && !backImage && captureStage === 'back');
+
+  const stopCamera = useCallback(() => {
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
     }
+  }, []);
 
+  const startCamera = useCallback(async () => {
+    stopCamera(); // Stop any existing streams first
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -58,19 +67,19 @@ export default function CardScanner() {
         variant: "destructive",
       });
     }
-  }, [toast, t]);
+  }, [stopCamera, toast, t]);
 
   useEffect(() => {
-    startCamera();
+    if (isCameraActive) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
 
     return () => {
-      // Cleanup: stop camera when component unmounts
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
-      }
+      stopCamera(); // Cleanup on unmount
     };
-  }, [startCamera]);
+  }, [isCameraActive, startCamera, stopCamera]);
 
   const captureImage = () => {
     if (videoRef.current && canvasRef.current && videoRef.current.srcObject) {
@@ -82,28 +91,41 @@ export default function CardScanner() {
       if (context) {
         context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
         const dataUrl = canvas.toDataURL('image/jpeg');
-        setImageData(dataUrl);
         
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream?.getTracks().forEach(track => track.stop());
-        videoRef.current.srcObject = null;
+        if (captureStage === 'front') {
+          setFrontImage(dataUrl);
+          setCaptureStage('back');
+          stopCamera();
+        } else if (captureStage === 'back') {
+          setBackImage(dataUrl);
+          setCaptureStage('done');
+          stopCamera();
+        }
       }
     }
   };
 
   const retakeImage = () => {
-    setImageData(null);
+    setFrontImage(null);
+    setBackImage(null);
     setAnalysisResult(null);
     setNotes('');
-    startCamera();
+    setCaptureStage('front');
   };
+  
+  const proceedToCaptureBack = () => {
+     setCaptureStage('back');
+  }
 
   const handleAnalyze = async () => {
-    if (!imageData) return;
+    if (!frontImage) return;
     setIsAnalyzing(true);
     setAnalysisResult(null);
     try {
-      const result = await analyzeCardAndSearchCompanyInfo({ cardImageDataUri: imageData });
+      const result = await analyzeCardAndSearchCompanyInfo({ 
+        cardFrontImageDataUri: frontImage,
+        cardBackImageDataUri: backImage,
+       });
       setAnalysisResult(result);
     } catch (error) {
       console.error("AI analysis failed:", error);
@@ -123,24 +145,79 @@ export default function CardScanner() {
       title: t('cardSavedTitle'),
       description: t('cardSavedDescription'),
     });
-    // Maybe redirect to dashboard or clear state
     retakeImage();
   };
+
+  const renderCaptureUI = () => {
+    if (captureStage === 'done' || analysisResult) return null;
+
+    if (!frontImage) {
+      return (
+        <div className="flex justify-center gap-4 mt-4">
+          <Button onClick={captureImage} disabled={hasCameraPermission !== true}>
+            <Camera className="mr-2 h-4 w-4" /> {t('captureFront')}
+          </Button>
+        </div>
+      );
+    }
+
+    if (frontImage && !backImage) {
+       return (
+        <div className="flex justify-center gap-4 mt-4">
+          <Button variant="outline" onClick={retakeImage}>
+            <RefreshCw className="mr-2 h-4 w-4" /> {t('retake')}
+          </Button>
+          <Button onClick={proceedToCaptureBack} disabled={captureStage === 'back'}>
+            <Camera className="mr-2 h-4 w-4" /> {t('captureBack')}
+          </Button>
+        </div>
+      );
+    }
+
+    if (frontImage && backImage) {
+       return (
+        <div className="flex justify-center gap-4 mt-4">
+          <Button variant="outline" onClick={retakeImage}>
+            <RefreshCw className="mr-2 h-4 w-4" /> {t('retake')}
+          </Button>
+          <Button onClick={handleAnalyze} disabled={isAnalyzing}>
+            {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+            {t('analyzeWithAI')}
+          </Button>
+        </div>
+       )
+    }
+    
+    return null;
+  }
   
   return (
     <Card>
-      <CardContent className="p-4">
+      <CardContent className="p-4 space-y-4">
         <div className="aspect-video w-full bg-muted rounded-md overflow-hidden relative flex items-center justify-center">
-          {imageData ? (
-            <Image src={imageData} alt="Captured business card" layout="fill" objectFit="contain" />
-          ) : (
+          {isCameraActive ? (
              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover"></video>
+          ) : (
+            <div className='flex items-center justify-center w-full h-full gap-4 p-4 bg-muted/50'>
+              {frontImage && (
+                <div className="flex-1 flex flex-col items-center gap-2">
+                   <p className="font-semibold">{t('frontSide')}</p>
+                   <Image src={frontImage} alt="Captured business card front" width={240} height={135} className="object-contain rounded-md border" />
+                </div>
+              )}
+              {backImage && (
+                 <div className="flex-1 flex flex-col items-center gap-2">
+                   <p className="font-semibold">{t('backSide')}</p>
+                   <Image src={backImage} alt="Captured business card back" width={240} height={135} className="object-contain rounded-md border" />
+                </div>
+              )}
+            </div>
           )}
           <canvas ref={canvasRef} className="hidden"></canvas>
         </div>
         
-        {hasCameraPermission === false && !imageData && (
-          <Alert variant="destructive" className="mt-4">
+        {hasCameraPermission === false && isCameraActive && (
+          <Alert variant="destructive">
             <AlertTitle>{t('cameraAccessDeniedTitle')}</AlertTitle>
             <AlertDescription>
               {t('cameraAccessDeniedDescription')}
@@ -148,29 +225,7 @@ export default function CardScanner() {
           </Alert>
         )}
 
-        {!analysisResult && (
-          <div className="flex justify-center gap-4 mt-4">
-            {imageData ? (
-              <>
-                <Button variant="outline" onClick={retakeImage}>
-                  <RefreshCw className="mr-2 h-4 w-4" /> {t('retake')}
-                </Button>
-                <Button onClick={handleAnalyze} disabled={isAnalyzing}>
-                  {isAnalyzing ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Wand2 className="mr-2 h-4 w-4" />
-                  )}
-                  {t('analyzeWithAI')}
-                </Button>
-              </>
-            ) : (
-              <Button onClick={captureImage} disabled={hasCameraPermission !== true}>
-                <Camera className="mr-2 h-4 w-4" /> {t('captureCard')}
-              </Button>
-            )}
-          </div>
-        )}
+        {renderCaptureUI()}
 
         {analysisResult && (
           <div className="mt-6 space-y-4">

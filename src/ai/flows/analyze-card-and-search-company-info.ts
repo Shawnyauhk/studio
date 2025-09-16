@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Analyzes a scanned business card, extracts contact and company information, 
+ * @fileOverview Analyzes a scanned business card (front and back), extracts contact and company information, 
  * and searches for relevant public information about the company.
  *
  * - analyzeCardAndSearchCompanyInfo - A function that handles the card analysis and company information search process.
@@ -12,10 +12,15 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AnalyzeCardAndSearchCompanyInfoInputSchema = z.object({
-  cardImageDataUri: z
+  cardFrontImageDataUri: z
     .string()
     .describe(
-      "A photo of a business card, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "A photo of the front of a business card, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
+    cardBackImageDataUri: z
+    .string().optional()
+    .describe(
+      "An optional photo of the back of a business card, in the same data URI format."
     ),
 });
 export type AnalyzeCardAndSearchCompanyInfoInput = z.infer<
@@ -46,20 +51,27 @@ const prompt = ai.definePrompt({
   name: 'analyzeCardAndSearchCompanyInfoPrompt',
   input: {schema: AnalyzeCardAndSearchCompanyInfoInputSchema},
   output: {schema: AnalyzeCardAndSearchCompanyInfoOutputSchema},
-  prompt: `You are an expert business analyst AI. Your task is to meticulously analyze the provided image of a business card.
+  prompt: `You are an expert business analyst AI. Your task is to meticulously analyze the provided images of a business card (front and back).
 
-1.  **Extract Information**: Carefully extract the following details from the business card image:
+1.  **Analyze Both Sides**: Carefully examine both the front and back images of the business card. One side might be in one language (e.g., English) and the other in another (e.g., Chinese). Synthesize information from both sides to get the complete picture.
+
+2.  **Extract Information**: Carefully extract the following details from the business card images:
     *   Full Name of the person
     *   Job Title
     *   Company Name
     *   Phone Number
     *   Email Address
 
-2.  **Conduct Research**: After identifying the Company Name, perform a web search to find public information about the company. Summarize its business, mission, or any relevant background information into a concise description.
+3.  **Conduct Research**: After identifying the Company Name, perform a web search to find public information about the company. Summarize its business, mission, or any relevant background information into a concise description.
 
-3.  **Format Output**: Return all the extracted and researched information strictly in the required JSON format.
+4.  **Format Output**: Return all the extracted and researched information strictly in the required JSON format.
 
-Here is the business card image: {{media url=cardImageDataUri}}`,
+Here are the business card images:
+Front: {{media url=cardFrontImageDataUri}}
+{{#if cardBackImageDataUri}}
+Back: {{media url=cardBackImageDataUri}}
+{{/if}}
+`,
 });
 
 const analyzeCardAndSearchCompanyInfoFlow = ai.defineFlow(
