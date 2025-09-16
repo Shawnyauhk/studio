@@ -11,7 +11,7 @@ import type { BusinessCard } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/context/AuthContext';
 import { getFirebase } from '@/lib/firebase';
@@ -48,6 +48,13 @@ const groupCardsByCompany = (cards: BusinessCard[], language: 'en' | 'zh') => {
     return acc;
   }, {} as Record<string, BusinessCard[]>);
 };
+
+const hongKongDistricts = {
+  "港島": [ "中西區", "東區", "南區", "灣仔區" ],
+  "九龍": [ "九龍城區", "觀塘區", "深水埗區", "黃大仙區", "油尖旺區" ],
+  "新界": [ "離島區", "葵青區", "北區", "西貢區", "沙田區", "大埔區", "荃灣區", "屯門區", "元朗區" ]
+};
+
 
 export default function SavedCardsPage() {
   const { t, language } = useTranslation();
@@ -134,28 +141,6 @@ export default function SavedCardsPage() {
       return field || '';
   }
 
-  const availableRegions = useMemo(() => {
-    const regions = new Set<string>();
-    cards.forEach(card => {
-        const addressEn = typeof card.address === 'object' ? card.address?.en : card.address;
-        const addressZh = typeof card.address === 'object' ? card.address?.zh : '';
-        
-        const extractRegion = (address: string | undefined) => {
-            if (!address) return;
-            // Simple logic: extract last part after comma, or the whole string if no comma.
-            // This is a basic implementation and can be improved.
-            const parts = address.split(',').map(p => p.trim());
-            const region = parts.pop();
-            if (region) regions.add(region);
-        };
-
-        extractRegion(addressEn);
-        extractRegion(addressZh);
-    });
-    return Array.from(regions).sort();
-  }, [cards]);
-
-
   const filteredAndSortedCards = useMemo(() => {
     const lowercasedFilter = searchTerm.toLowerCase();
     
@@ -175,7 +160,7 @@ export default function SavedCardsPage() {
         filtered = filtered.filter(card => {
             const addressEn = (typeof card.address === 'object' ? card.address?.en : card.address) || '';
             const addressZh = (typeof card.address === 'object' ? card.address?.zh : '') || '';
-            return addressEn.includes(regionFilter) || addressZh.includes(regionFilter);
+            return addressEn.toLowerCase().includes(regionFilter.toLowerCase()) || addressZh.includes(regionFilter);
         });
     }
 
@@ -234,10 +219,15 @@ export default function SavedCardsPage() {
                 <SelectValue placeholder={t('filterByRegion')} />
             </SelectTrigger>
             <SelectContent>
-                <SelectItem value="all">{t('allRegions')}</SelectItem>
-                {availableRegions.map(region => (
-                    <SelectItem key={region} value={region}>{region}</SelectItem>
-                ))}
+              <SelectItem value="all">{t('allRegions')}</SelectItem>
+              {Object.entries(hongKongDistricts).map(([groupName, districts]) => (
+                <SelectGroup key={groupName}>
+                  <SelectLabel>{groupName}</SelectLabel>
+                  {districts.map(district => (
+                    <SelectItem key={district} value={district}>{district}</SelectItem>
+                  ))}
+                </SelectGroup>
+              ))}
             </SelectContent>
           </Select>
           <Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
