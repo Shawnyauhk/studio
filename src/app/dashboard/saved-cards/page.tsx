@@ -148,11 +148,13 @@ export default function SavedCardsPage() {
       const name = getLocalizedValue(card.name).toLowerCase();
       const title = getLocalizedValue(card.title).toLowerCase();
       const company = getLocalizedValue(card.companyName).toLowerCase();
+      const address = getLocalizedValue(card.address).toLowerCase();
       const notes = (card.notes || '').toLowerCase();
       
       return name.includes(lowercasedFilter) ||
              title.includes(lowercasedFilter) ||
              company.includes(lowercasedFilter) ||
+             address.includes(lowercasedFilter) ||
              notes.includes(lowercasedFilter);
     });
 
@@ -160,7 +162,9 @@ export default function SavedCardsPage() {
         filtered = filtered.filter(card => {
             const addressEn = ((typeof card.address === 'object' ? card.address?.en : card.address) || '').toLowerCase();
             const addressZh = (typeof card.address === 'object' ? card.address?.zh : '') || '';
-            return addressEn.includes(regionFilter.toLowerCase()) || addressZh.includes(regionFilter);
+            // Check against the district name directly
+            const regionLower = regionFilter.toLowerCase();
+            return addressEn.includes(regionLower) || addressZh.includes(regionFilter);
         });
     }
 
@@ -183,14 +187,23 @@ export default function SavedCardsPage() {
     const foundDistrictsSet = new Set<string>();
 
     cards.forEach(card => {
-        const addressEn = ((typeof card.address === 'object' ? card.address?.en : card.address) || '').toLowerCase();
-        const addressZh = (typeof card.address === 'object' ? card.address?.zh : '') || '';
+      const addressEn = (typeof card.address === 'object' ? card.address?.en : card.address) || '';
+      const addressZh = (typeof card.address === 'object' ? card.address?.zh : '') || '';
 
-        Object.values(hongKongDistricts).flat().forEach(district => {
-            if (addressEn.includes(district.toLowerCase()) || addressZh.includes(district)) {
-                foundDistrictsSet.add(district);
-            }
-        });
+      Object.values(hongKongDistricts).flat().forEach(district => {
+        // Check if the district is already found to avoid redundant checks
+        if (foundDistrictsSet.has(district)) {
+            return;
+        }
+        // Check English address (case-insensitive)
+        if (addressEn && addressEn.toLowerCase().includes(district.toLowerCase())) {
+            foundDistrictsSet.add(district);
+        }
+        // Check Chinese address
+        if (addressZh && addressZh.includes(district)) {
+            foundDistrictsSet.add(district);
+        }
+      });
     });
 
     Object.entries(hongKongDistricts).forEach(([groupName, districts]) => {
