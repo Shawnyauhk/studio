@@ -68,5 +68,7 @@
   "unknownErrorDescription": "儲存過程中發生預期之外的錯誤。請檢查您的 Firebase 安全規則是否已部署。",
   "savedCardsDescription": "在這裡查看您所有掃描過的名片。",
   "edit": "編輯",
-  "delete": "刪除"
+  "delete": "刪除",
+  "deleteCardTitle": "您確定嗎？",
+  "deleteCardDescription": "此操作無法復原，將會永久刪除這張名片。"
 }

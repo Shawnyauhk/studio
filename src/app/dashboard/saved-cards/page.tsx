@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/context/AuthContext';
 import { getFirebase } from '@/lib/firebase';
-import { collection, query, where, getDocs, Timestamp, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, doc, deleteDoc, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -65,10 +65,14 @@ export default function SavedCardsPage() {
       try {
         const { db } = await getFirebase();
         const cardsCollection = collection(db, 'businessCards');
+        // The query requires a composite index on userId and createdAt.
+        // If the index doesn't exist, Firestore will provide a link in the console error to create it.
+        // For now, we query first and sort on the client-side to avoid mandatory index creation for this demo.
         const q = query(cardsCollection, where('userId', '==', user.uid));
         const querySnapshot = await getDocs(q);
         const fetchedCards = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BusinessCard));
         
+        // Sort on the client-side
         fetchedCards.sort((a, b) => {
             const dateA = a.createdAt ? (a.createdAt as Timestamp).toDate().getTime() : 0;
             const dateB = b.createdAt ? (b.createdAt as Timestamp).toDate().getTime() : 0;
@@ -250,16 +254,16 @@ export default function SavedCardsPage() {
       <AlertDialog open={!!cardToDelete} onOpenChange={(open) => !open && setCardToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t('deleteCardTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the business card from your account.
+              {t('deleteCardDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
               {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Delete
+              {t('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

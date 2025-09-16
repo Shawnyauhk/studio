@@ -68,5 +68,7 @@
   "unknownErrorDescription": "An unexpected error occurred during save. Please check your Firebase security rules are deployed.",
   "savedCardsDescription": "View all your scanned business cards here.",
   "edit": "Edit",
-  "delete": "Delete"
+  "delete": "Delete",
+  "deleteCardTitle": "Are you absolutely sure?",
+  "deleteCardDescription": "This action cannot be undone. This will permanently delete the business card from your account."
 }
