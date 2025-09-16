@@ -82,5 +82,7 @@
   "dateAddedNewest": "Date Added (Newest)",
   "dateAddedOldest": "Date Added (Oldest)",
   "companyNameAZ": "Company Name (A-Z)",
-  "noSearchResults": "Your search returned no results."
+  "noSearchResults": "Your search returned no results.",
+  "filterByRegion": "Filter by Region",
+  "allRegions": "All Regions"
 }

@@ -82,5 +82,7 @@
   "dateAddedNewest": "新增日期 (由新到舊)",
   "dateAddedOldest": "新增日期 (由舊到新)",
   "companyNameAZ": "公司名稱 (A-Z)",
-  "noSearchResults": "沒有找到符合您搜索條件的結果。"
+  "noSearchResults": "沒有找到符合您搜索條件的結果。",
+  "filterByRegion": "按地區篩選",
+  "allRegions": "所有地區"
 }

@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Building, Calendar, FileText, Loader2, Briefcase, MapPin, MoreVertical, Pencil, Trash2, Camera, Search, ArrowUpDown } from 'lucide-react';
+import { Building, Calendar, FileText, Loader2, Briefcase, MapPin, MoreVertical, Pencil, Trash2, Camera, Search, ArrowUpDown, Globe } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import type { BusinessCard } from '@/lib/types';
@@ -60,6 +60,7 @@ export default function SavedCardsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<SortOption>('createdAt_desc');
+  const [regionFilter, setRegionFilter] = useState<string>('all');
 
   useEffect(() => {
     const fetchCards = async () => {
@@ -133,10 +134,32 @@ export default function SavedCardsPage() {
       return field || '';
   }
 
+  const availableRegions = useMemo(() => {
+    const regions = new Set<string>();
+    cards.forEach(card => {
+        const addressEn = typeof card.address === 'object' ? card.address?.en : card.address;
+        const addressZh = typeof card.address === 'object' ? card.address?.zh : '';
+        
+        const extractRegion = (address: string | undefined) => {
+            if (!address) return;
+            // Simple logic: extract last part after comma, or the whole string if no comma.
+            // This is a basic implementation and can be improved.
+            const parts = address.split(',').map(p => p.trim());
+            const region = parts.pop();
+            if (region) regions.add(region);
+        };
+
+        extractRegion(addressEn);
+        extractRegion(addressZh);
+    });
+    return Array.from(regions).sort();
+  }, [cards]);
+
+
   const filteredAndSortedCards = useMemo(() => {
     const lowercasedFilter = searchTerm.toLowerCase();
     
-    const filtered = cards.filter(card => {
+    let filtered = cards.filter(card => {
       const name = getLocalizedValue(card.name).toLowerCase();
       const title = getLocalizedValue(card.title).toLowerCase();
       const company = getLocalizedValue(card.companyName).toLowerCase();
@@ -147,6 +170,14 @@ export default function SavedCardsPage() {
              company.includes(lowercasedFilter) ||
              notes.includes(lowercasedFilter);
     });
+
+    if (regionFilter !== 'all') {
+        filtered = filtered.filter(card => {
+            const addressEn = (typeof card.address === 'object' ? card.address?.en : card.address) || '';
+            const addressZh = (typeof card.address === 'object' ? card.address?.zh : '') || '';
+            return addressEn.includes(regionFilter) || addressZh.includes(regionFilter);
+        });
+    }
 
     return filtered.sort((a, b) => {
         switch (sortOption) {
@@ -160,7 +191,7 @@ export default function SavedCardsPage() {
                 return 0;
         }
     });
-  }, [cards, searchTerm, sortOption, language]);
+  }, [cards, searchTerm, sortOption, language, regionFilter]);
 
 
   const groupedCards = useMemo(() => groupCardsByCompany(filteredAndSortedCards, language), [filteredAndSortedCards, language]);
@@ -196,7 +227,19 @@ export default function SavedCardsPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
+          <Select value={regionFilter} onValueChange={setRegionFilter}>
+            <SelectTrigger className="w-[180px]">
+                <Globe className="mr-2 h-4 w-4" />
+                <SelectValue placeholder={t('filterByRegion')} />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="all">{t('allRegions')}</SelectItem>
+                {availableRegions.map(region => (
+                    <SelectItem key={region} value={region}>{region}</SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
           <Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
             <SelectTrigger className="w-[180px]">
               <ArrowUpDown className="mr-2 h-4 w-4" />
