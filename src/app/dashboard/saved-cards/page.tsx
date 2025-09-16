@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Building, Calendar, FileText, Loader2, Briefcase, MapPin, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -12,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/context/AuthContext';
 import { getFirebase } from '@/lib/firebase';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -20,6 +21,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 const groupCardsByCompany = (cards: BusinessCard[], language: 'en' | 'zh') => {
@@ -38,8 +49,11 @@ export default function SavedCardsPage() {
   const { t, language } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [cards, setCards] = useState<BusinessCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [cardToDelete, setCardToDelete] = useState<BusinessCard | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchCards = async () => {
@@ -51,16 +65,14 @@ export default function SavedCardsPage() {
       try {
         const { db } = await getFirebase();
         const cardsCollection = collection(db, 'businessCards');
-        // The query now only filters by userId, avoiding the need for a composite index.
         const q = query(cardsCollection, where('userId', '==', user.uid));
         const querySnapshot = await getDocs(q);
         const fetchedCards = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BusinessCard));
         
-        // Sorting is now done on the client-side after fetching.
         fetchedCards.sort((a, b) => {
             const dateA = a.createdAt ? (a.createdAt as Timestamp).toDate().getTime() : 0;
             const dateB = b.createdAt ? (b.createdAt as Timestamp).toDate().getTime() : 0;
-            return dateB - dateA; // Sort descending (newest first)
+            return dateB - dateA;
         });
 
         setCards(fetchedCards);
@@ -79,6 +91,30 @@ export default function SavedCardsPage() {
     fetchCards();
   }, [user, toast]);
 
+  const handleDelete = async () => {
+    if (!cardToDelete) return;
+    setIsDeleting(true);
+    try {
+      const { db } = await getFirebase();
+      await deleteDoc(doc(db, "businessCards", cardToDelete.id));
+      setCards(cards.filter(card => card.id !== cardToDelete.id));
+      toast({
+        title: "Card Deleted",
+        description: "The business card has been successfully deleted.",
+      });
+    } catch (error) {
+       console.error("Error deleting card: ", error);
+       toast({
+        title: "Deletion Failed",
+        description: "Could not delete the card. Please try again.",
+        variant: "destructive",
+       });
+    } finally {
+      setIsDeleting(false);
+      setCardToDelete(null);
+    }
+  };
+
   const groupedCards = useMemo(() => groupCardsByCompany(cards, language), [cards, language]);
   const companies = useMemo(() => Object.keys(groupedCards).sort(), [groupedCards]);
 
@@ -92,7 +128,7 @@ export default function SavedCardsPage() {
     return new Date();
   };
   
-  const getLocalizedValue = (field: BusinessCard['name']) => {
+  const getLocalizedValue = (field: BusinessCard['name'] | BusinessCard['title'] | BusinessCard['companyName'] | BusinessCard['address']) => {
       if (typeof field === 'object' && field !== null) {
           return field[language] || field.en || field.zh || '';
       }
@@ -148,11 +184,11 @@ export default function SavedCardsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push(`/dashboard/saved-cards/edit/${card.id}`)}>
                               <Pencil className="mr-2 h-4 w-4" />
                               <span>{t('edit')}</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">
+                            <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setCardToDelete(card)}>
                               <Trash2 className="mr-2 h-4 w-4" />
                               <span>{t('delete')}</span>
                             </DropdownMenuItem>
@@ -210,6 +246,25 @@ export default function SavedCardsPage() {
           </AccordionItem>
         ))}
       </Accordion>
+
+      <AlertDialog open={!!cardToDelete} onOpenChange={(open) => !open && setCardToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the business card from your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+              {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
