@@ -4,12 +4,14 @@ import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Building, Calendar, FileText, Loader2, Briefcase, MapPin, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Building, Calendar, FileText, Loader2, Briefcase, MapPin, MoreVertical, Pencil, Trash2, Camera, Search, ArrowUpDown } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import type { BusinessCard } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/context/AuthContext';
 import { getFirebase } from '@/lib/firebase';
@@ -33,9 +35,11 @@ import {
 } from "@/components/ui/alert-dialog";
 
 
+type SortOption = 'createdAt_desc' | 'createdAt_asc' | 'companyName_asc';
+
 const groupCardsByCompany = (cards: BusinessCard[], language: 'en' | 'zh') => {
   return cards.reduce((acc, card) => {
-    const companyName = typeof card.companyName === 'object' ? card.companyName[language] : card.companyName;
+    const companyName = typeof card.companyName === 'object' ? card.companyName[language] || card.companyName['en'] : card.companyName;
     const company = companyName || 'Uncategorized';
     if (!acc[company]) {
       acc[company] = [];
@@ -54,6 +58,8 @@ export default function SavedCardsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [cardToDelete, setCardToDelete] = useState<BusinessCard | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOption, setSortOption] = useState<SortOption>('createdAt_desc');
 
   useEffect(() => {
     const fetchCards = async () => {
@@ -65,20 +71,10 @@ export default function SavedCardsPage() {
       try {
         const { db } = await getFirebase();
         const cardsCollection = collection(db, 'businessCards');
-        // The query requires a composite index on userId and createdAt.
-        // If the index doesn't exist, Firestore will provide a link in the console error to create it.
-        // For now, we query first and sort on the client-side to avoid mandatory index creation for this demo.
         const q = query(cardsCollection, where('userId', '==', user.uid));
         const querySnapshot = await getDocs(q);
         const fetchedCards = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BusinessCard));
         
-        // Sort on the client-side
-        fetchedCards.sort((a, b) => {
-            const dateA = a.createdAt ? (a.createdAt as Timestamp).toDate().getTime() : 0;
-            const dateB = b.createdAt ? (b.createdAt as Timestamp).toDate().getTime() : 0;
-            return dateB - dateA;
-        });
-
         setCards(fetchedCards);
       } catch (error) {
         console.error("Error fetching cards: ", error);
@@ -103,8 +99,8 @@ export default function SavedCardsPage() {
       await deleteDoc(doc(db, "businessCards", cardToDelete.id));
       setCards(cards.filter(card => card.id !== cardToDelete.id));
       toast({
-        title: "Card Deleted",
-        description: "The business card has been successfully deleted.",
+        title: t('cardDeletedTitle'),
+        description: t('cardDeletedDescription'),
       });
     } catch (error) {
        console.error("Error deleting card: ", error);
@@ -119,9 +115,7 @@ export default function SavedCardsPage() {
     }
   };
 
-  const groupedCards = useMemo(() => groupCardsByCompany(cards, language), [cards, language]);
-  const companies = useMemo(() => Object.keys(groupedCards).sort(), [groupedCards]);
-
+  
   const formatDate = (timestamp: BusinessCard['createdAt']) => {
     if (timestamp instanceof Date) {
       return timestamp;
@@ -139,24 +133,49 @@ export default function SavedCardsPage() {
       return field || '';
   }
 
+  const filteredAndSortedCards = useMemo(() => {
+    const lowercasedFilter = searchTerm.toLowerCase();
+    
+    const filtered = cards.filter(card => {
+      const name = getLocalizedValue(card.name).toLowerCase();
+      const title = getLocalizedValue(card.title).toLowerCase();
+      const company = getLocalizedValue(card.companyName).toLowerCase();
+      const notes = (card.notes || '').toLowerCase();
+      
+      return name.includes(lowercasedFilter) ||
+             title.includes(lowercasedFilter) ||
+             company.includes(lowercasedFilter) ||
+             notes.includes(lowercasedFilter);
+    });
+
+    return filtered.sort((a, b) => {
+        switch (sortOption) {
+            case 'createdAt_asc':
+                return formatDate(a.createdAt).getTime() - formatDate(b.createdAt).getTime();
+            case 'createdAt_desc':
+                return formatDate(b.createdAt).getTime() - formatDate(a.createdAt).getTime();
+            case 'companyName_asc':
+                return getLocalizedValue(a.companyName).localeCompare(getLocalizedValue(b.companyName));
+            default:
+                return 0;
+        }
+    });
+  }, [cards, searchTerm, sortOption, language]);
+
+
+  const groupedCards = useMemo(() => groupCardsByCompany(filteredAndSortedCards, language), [filteredAndSortedCards, language]);
+  const companies = useMemo(() => Object.keys(groupedCards).sort(), [groupedCards]);
+
 
   if (isLoading) {
      return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-4">Loading saved cards...</p>
+        <p className="ml-4">{t('loadingSavedCards')}</p>
       </div>
     );
   }
 
-  if (cards.length === 0) {
-    return (
-        <div className="text-center py-12">
-            <h3 className="text-xl font-semibold">{t('noCardsFound')}</h3>
-            <p className="text-muted-foreground">{t('noCardsFoundDescription')}</p>
-        </div>
-    );
-  }
 
   return (
     <div className="space-y-8">
@@ -166,6 +185,44 @@ export default function SavedCardsPage() {
           {t('savedCardsDescription')}
         </p>
       </div>
+      
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Input 
+            placeholder={t('searchPlaceholder')}
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center gap-4">
+          <Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
+            <SelectTrigger className="w-[180px]">
+              <ArrowUpDown className="mr-2 h-4 w-4" />
+              <SelectValue placeholder={t('sortBy')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="createdAt_desc">{t('dateAddedNewest')}</SelectItem>
+              <SelectItem value="createdAt_asc">{t('dateAddedOldest')}</SelectItem>
+              <SelectItem value="companyName_asc">{t('companyNameAZ')}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button asChild>
+            <Link href="/dashboard/scan">
+              <Camera className="mr-2 h-4 w-4" />
+              {t('scanNewCard')}
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      {filteredAndSortedCards.length === 0 ? (
+         <div className="text-center py-12">
+            <h3 className="text-xl font-semibold">{t('noCardsFound')}</h3>
+            <p className="text-muted-foreground">{searchTerm ? t('noSearchResults') : t('noCardsFoundDescription')}</p>
+        </div>
+      ) : (
       <Accordion type="multiple" defaultValue={companies} className="w-full">
         {companies.map((company) => (
           <AccordionItem value={company} key={company}>
@@ -250,6 +307,7 @@ export default function SavedCardsPage() {
           </AccordionItem>
         ))}
       </Accordion>
+      )}
 
       <AlertDialog open={!!cardToDelete} onOpenChange={(open) => !open && setCardToDelete(null)}>
         <AlertDialogContent>
