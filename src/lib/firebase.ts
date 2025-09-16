@@ -4,12 +4,12 @@ import { getFirestore, initializeFirestore, persistentLocalCache, type Firestore
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
 const firebaseConfig: FirebaseOptions = {
-  apiKey: "AIzaSyDBp4ux24hmjr-5nP9u5RGV-m4h2oLkZoY",
-  authDomain: "studio-697601028-76b1c.firebaseapp.com",
-  projectId: "studio-697601028-76b1c",
-  storageBucket: "studio-697601028-76b1c.appspot.com",
-  messagingSenderId: "60808022828",
-  appId: "1:60808022828:web:9cd0358fa9c9cca4e27a89"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 // --- Firebase App Initialization ---
