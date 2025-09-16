@@ -37,10 +37,11 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
-    allowedDevOrigins: [
-      'https://*.cluster-ejd22kqny5htuv5dfowoyipt52.cloudworkstations.dev',
-    ],
+    // allowedDevOrigins has been moved out of experimental
   },
+  allowedDevOrigins: [
+    'https://*.cluster-ejd22kqny5htuv5dfowoyipt52.cloudworkstations.dev',
+  ],
 };
 
 export default nextConfig;
