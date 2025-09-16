@@ -130,7 +130,7 @@ export default function SavedCardsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
                 {groupedCards[company].map((card) => (
                    <Card key={card.id} className="flex flex-col overflow-hidden hover:shadow-lg transition-shadow">
-                    <CardHeader className="relative">
+                    <CardHeader className="relative p-0">
                       <div className="absolute top-2 right-2 z-10">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -150,11 +150,11 @@ export default function SavedCardsPage() {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                      <div className="relative aspect-video w-full overflow-hidden rounded-t-lg">
+                      <div className="relative aspect-video w-full overflow-hidden">
                         <Image src={card.cardFrontImageUrl} alt={`Card of ${card.name}`} fill className="object-cover" data-ai-hint="business card"/>
                       </div>
                     </CardHeader>
-                    <CardContent className="flex-1 space-y-3">
+                    <CardContent className="flex-1 space-y-3 p-4">
                       <CardTitle className="font-headline text-xl">{card.name}</CardTitle>
                       <div className="text-muted-foreground space-y-2 text-sm">
                         <p className="flex items-center gap-2">
