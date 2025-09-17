@@ -40,7 +40,7 @@ export default function Header() {
   const { t, setLanguage, language } = useTranslation();
 
   const navItems = [
-    { href: '/dashboard', label: t('myCard'), icon: User },
+    { href: '/', label: t('myCard'), icon: User },
     { href: '/dashboard/saved-cards', label: t('savedCards'), icon: HardDrive },
   ];
 
@@ -170,7 +170,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <Logo className="h-8 w-8" />
           <span className="font-headline text-xl font-bold">BizCard</span>
         </Link>
@@ -185,7 +185,7 @@ export default function Header() {
               </SheetTrigger>
               <SheetContent side="right" className="w-[240px] p-0">
                 <SheetHeader className="p-4 border-b">
-                   <Link href="/dashboard" className="flex items-center gap-2" onClick={() => setSheetOpen(false)}>
+                   <Link href="/" className="flex items-center gap-2" onClick={() => setSheetOpen(false)}>
                     <Logo className="h-8 w-8" />
                     <span className="font-headline text-xl font-bold">BizCard</span>
                   </Link>
