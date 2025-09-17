@@ -16,7 +16,7 @@ export default function DashboardPage() {
             {t('digitalCardDescription')}
           </p>
         </div>
-        <Button asChild>
+        <Button asChild size="sm">
           <Link href="/dashboard/scan">
             <Camera className="mr-2 h-4 w-4" />
             {t('scanNewCard')}
