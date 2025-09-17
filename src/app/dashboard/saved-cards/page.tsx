@@ -241,51 +241,55 @@ export default function SavedCardsPage() {
         </p>
       </div>
       
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input 
-            placeholder={t('searchPlaceholder')}
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="flex items-center gap-4 flex-wrap">
-          <Select value={regionFilter} onValueChange={setRegionFilter}>
-            <SelectTrigger className="w-[180px]">
-                <Globe className="mr-2 h-4 w-4" />
-                <SelectValue placeholder={t('filterByRegion')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allRegions')}</SelectItem>
-              {Object.entries(availableDistricts).map(([groupName, districts]) => (
-                <SelectGroup key={groupName}>
-                  <SelectLabel>{groupName}</SelectLabel>
-                  {districts.map(district => (
-                    <SelectItem key={district} value={district}>{district}</SelectItem>
+      <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <div className="flex flex-col sm:flex-row gap-4 flex-1">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input 
+                placeholder={t('searchPlaceholder')}
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-4 flex-wrap">
+              <Select value={regionFilter} onValueChange={setRegionFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                    <Globe className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder={t('filterByRegion')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('allRegions')}</SelectItem>
+                  {Object.entries(availableDistricts).map(([groupName, districts]) => (
+                    <SelectGroup key={groupName}>
+                      <SelectLabel>{groupName}</SelectLabel>
+                      {districts.map(district => (
+                        <SelectItem key={district} value={district}>{district}</SelectItem>
+                      ))}
+                    </SelectGroup>
                   ))}
-                </SelectGroup>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
-            <SelectTrigger className="w-[180px]">
-              <ArrowUpDown className="mr-2 h-4 w-4" />
-              <SelectValue placeholder={t('sortBy')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="createdAt_desc">{t('dateAddedNewest')}</SelectItem>
-              <SelectItem value="createdAt_asc">{t('dateAddedOldest')}</SelectItem>
-              <SelectItem value="companyName_asc">{t('companyNameAZ')}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button asChild size="sm">
-            <Link href="/dashboard/scan">
-              <Camera className="mr-2 h-4 w-4" />
-              {t('scanNewCard')}
-            </Link>
-          </Button>
+                </SelectContent>
+              </Select>
+              <Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <ArrowUpDown className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder={t('sortBy')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="createdAt_desc">{t('dateAddedNewest')}</SelectItem>
+                  <SelectItem value="createdAt_asc">{t('dateAddedOldest')}</SelectItem>
+                  <SelectItem value="companyName_asc">{t('companyNameAZ')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+        </div>
+        <div className="flex items-start">
+            <Button asChild size="sm">
+                <Link href="/dashboard/scan">
+                <Camera className="mr-2 h-4 w-4" />
+                {t('scanNewCard')}
+                </Link>
+            </Button>
         </div>
       </div>
 
