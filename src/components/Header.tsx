@@ -23,15 +23,33 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useTranslation } from '@/hooks/use-translation';
 import { Separator } from './ui/separator';
 
+
+const LanguageSwitcher = () => {
+  const { t, setLanguage, language } = useTranslation();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <Languages className="h-5 w-5" />
+          <span className="sr-only">{t('language')}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => setLanguage('en')}>
+          English {language === 'en' && <span className="ml-auto">✔</span>}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setLanguage('zh')}>
+          繁體中文 {language === 'zh' && <span className="ml-auto">✔</span>}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
 export default function Header() {
   const pathname = usePathname();
@@ -96,7 +114,7 @@ export default function Header() {
           
           <div className="flex flex-col w-full text-sm font-normal">
             <button
-                onClick={() => setLanguage('en')}
+                onClick={() => { setLanguage('en'); setSheetOpen(false); }}
                 className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
             >
                 <Languages className="mr-2 h-4 w-4" />
@@ -104,7 +122,7 @@ export default function Header() {
                 {language === 'en' && <span className="ml-auto">✔</span>}
             </button>
             <button
-                onClick={() => setLanguage('zh')}
+                onClick={() => { setLanguage('zh'); setSheetOpen(false); }}
                 className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
             >
                  <Languages className="mr-2 h-4 w-4" />
@@ -113,11 +131,11 @@ export default function Header() {
             </button>
           </div>
           <Separator/>
-          <Button variant="ghost" onClick={addAnotherAccount} className="w-full justify-start px-2 py-1.5 text-sm font-normal">
+          <Button variant="ghost" onClick={() => { addAnotherAccount(); setSheetOpen(false); }} className="w-full justify-start px-2 py-1.5 text-sm font-normal">
             <UserPlus className="mr-2 h-4 w-4" />
             <span>{t('addAnotherAccount')}</span>
           </Button>
-          <Button variant="ghost" onClick={logout} className="w-full justify-start px-2 py-1.5 text-sm font-normal">
+          <Button variant="ghost" onClick={() => { logout(); setSheetOpen(false); }} className="w-full justify-start px-2 py-1.5 text-sm font-normal">
             <LogOut className="mr-2 h-4 w-4" />
             <span>{t('logOut')}</span>
           </Button>
@@ -144,23 +162,6 @@ export default function Header() {
               </p>
             </div>
           </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <Languages className="mr-2 h-4 w-4" />
-              <span>{t('language')}</span>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuPortal>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem onClick={() => setLanguage('en')}>
-                  English {language === 'en' && <span className="ml-auto">✔</span>}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLanguage('zh')}>
-                  繁體中文 {language === 'zh' && <span className="ml-auto">✔</span>}
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuPortal>
-          </DropdownMenuSub>
           <DropdownMenuSeparator />
            <DropdownMenuItem onClick={addAnotherAccount}>
             <UserPlus className="mr-2 h-4 w-4" />
@@ -191,7 +192,7 @@ export default function Header() {
         <div className="flex items-center gap-2 md:hidden">
             <Sheet open={isSheetOpen} onOpenChange={setSheetOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || 'User'} />
                     <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
@@ -217,6 +218,7 @@ export default function Header() {
 
         <div className="hidden md:flex items-center gap-4">
           <div className="flex-grow" />
+          <LanguageSwitcher />
           <UserProfile />
         </div>
       </div>
