@@ -183,9 +183,11 @@ export default function Header() {
         <div className="flex items-center gap-2 md:hidden">
             <Sheet open={isSheetOpen} onOpenChange={setSheetOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-6 w-6" />
-                  <span className="sr-only">Open menu</span>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || 'User'} />
+                    <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+                  </Avatar>
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[240px] p-0">
@@ -206,6 +208,7 @@ export default function Header() {
         </div>
 
         <div className="hidden md:flex items-center gap-4">
+          <div className="flex-grow" />
           <UserProfile />
         </div>
       </div>
