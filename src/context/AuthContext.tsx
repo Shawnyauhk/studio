@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, type User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
@@ -26,11 +26,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const currentUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
+      // Check if the user has changed
+      if (user?.uid !== currentUserIdRef.current && currentUserIdRef.current !== null) {
+        // User has switched, force a reload to clear all state.
+        window.location.reload();
+      } else {
+        setUser(user);
+        currentUserIdRef.current = user?.uid || null;
+        setLoading(false);
+      }
     });
 
     return () => unsubscribe();
