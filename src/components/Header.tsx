@@ -54,7 +54,7 @@ export default function Header() {
   }
 
   const NavLinks = ({isMobile = false}: {isMobile?: boolean}) => (
-     <nav className={cn("flex items-center gap-2", isMobile ? "flex-col items-start w-full" : "hidden md:flex")}>
+     <nav className={cn("flex items-center gap-2", isMobile ? "flex-col items-start w-full" : "")}>
       {navItems.map((item) => (
         <Link
           key={item.href}
@@ -170,10 +170,15 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2">
-          <Logo className="h-8 w-8" />
-          <span className="font-headline text-xl font-bold">BizCard</span>
-        </Link>
+        <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center gap-2">
+              <Logo className="h-8 w-8" />
+              <span className="font-headline text-xl font-bold hidden sm:inline-block">BizCard</span>
+            </Link>
+            <div className="hidden md:flex">
+               <NavLinks />
+            </div>
+        </div>
         
         <div className="flex items-center gap-2 md:hidden">
             <Sheet open={isSheetOpen} onOpenChange={setSheetOpen}>
@@ -201,7 +206,6 @@ export default function Header() {
         </div>
 
         <div className="hidden md:flex items-center gap-4">
-          <NavLinks />
           <UserProfile />
         </div>
       </div>
