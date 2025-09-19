@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -9,6 +10,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
+  addAnotherAccount: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -16,6 +18,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   signInWithGoogle: async () => {},
+  addAnotherAccount: async () => {},
   logout: async () => {},
 });
 
@@ -43,6 +46,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const addAnotherAccount = async () => {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error("Error adding another account", error);
+      // We don't re-throw here as it might be a user cancellation which is not a true error.
+    }
+  };
+
   const logout = async () => {
     try {
       await signOut(auth);
@@ -53,7 +67,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, loading, signInWithGoogle, addAnotherAccount, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User, HardDrive, Menu, LogOut, Languages } from 'lucide-react';
+import { User, HardDrive, Menu, LogOut, Languages, UserPlus } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { cn } from '@/lib/utils';
 import {
@@ -36,7 +36,7 @@ import { Separator } from './ui/separator';
 export default function Header() {
   const pathname = usePathname();
   const [isSheetOpen, setSheetOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout, addAnotherAccount } = useAuth();
   const { t, setLanguage, language } = useTranslation();
 
   const navItems = [
@@ -112,7 +112,11 @@ export default function Header() {
                 {language === 'zh' && <span className="ml-auto">✔</span>}
             </button>
           </div>
-
+          <Separator/>
+          <Button variant="ghost" onClick={addAnotherAccount} className="w-full justify-start px-2 py-1.5 text-sm font-normal">
+            <UserPlus className="mr-2 h-4 w-4" />
+            <span>{t('addAnotherAccount')}</span>
+          </Button>
           <Button variant="ghost" onClick={logout} className="w-full justify-start px-2 py-1.5 text-sm font-normal">
             <LogOut className="mr-2 h-4 w-4" />
             <span>{t('logOut')}</span>
@@ -158,6 +162,10 @@ export default function Header() {
             </DropdownMenuPortal>
           </DropdownMenuSub>
           <DropdownMenuSeparator />
+           <DropdownMenuItem onClick={addAnotherAccount}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            <span>{t('addAnotherAccount')}</span>
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={logout}>
             <LogOut className="mr-2 h-4 w-4" />
             <span>{t('logOut')}</span>
