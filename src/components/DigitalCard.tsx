@@ -2,6 +2,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import QRCode from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,7 +17,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { getFirebase } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
@@ -26,10 +34,33 @@ import { useAuth } from '@/context/AuthContext';
 
 function DigitalCardPreview({ cardData, onEdit }: { cardData: DigitalCardData, onEdit: () => void }) {
     const { t } = useTranslation();
+    const [isQrCodeOpen, setIsQrCodeOpen] = useState(false);
     return (
       <div className="space-y-6">
         <div className="w-full max-w-sm mx-auto bg-card rounded-2xl shadow-2xl p-6 relative overflow-hidden">
-            <div className="absolute top-4 right-4 z-20">
+            <div className="absolute top-4 right-4 z-20 flex gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                   <Button variant="ghost" size="icon">
+                    <Share2 className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setIsQrCodeOpen(true)}>
+                    <QrCode className="mr-2"/>{t('showWebsiteQR')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Star className="mr-2"/>{t('addToFavorites')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Download className="mr-2"/>{t('saveToDesktop')}
+                  </DropdownMenuItem>
+                   <DropdownMenuItem>
+                    <Share2 className="mr-2"/>{t('shareThisPage')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Button onClick={onEdit} variant="ghost" size="icon">
                 <Edit className="h-5 w-5" />
               </Button>
@@ -73,14 +104,19 @@ function DigitalCardPreview({ cardData, onEdit }: { cardData: DigitalCardData, o
                 </div>
             </div>
         </div>
-        
-        <div className="w-full max-w-sm mx-auto space-y-2">
-            <Button className="w-full justify-start" variant="outline"><QrCode className="mr-2"/>{t('showWebsiteQR')}</Button>
-            <Button className="w-full justify-start" variant="outline"><Star className="mr-2"/>{t('addToFavorites')}</Button>
-            <Button className="w-full justify-start" variant="outline"><Download className="mr-2"/>{t('saveToDesktop')}</Button>
-            <Button className="w-full justify-start" variant="outline"><Share2 className="mr-2"/>{t('shareThisPage')}</Button>
-        </div>
 
+        <Dialog open={isQrCodeOpen} onOpenChange={setIsQrCodeOpen}>
+          <DialogContent className="sm:max-w-xs">
+            <DialogHeader>
+              <DialogTitle className="text-center font-headline">{t('showWebsiteQR')}</DialogTitle>
+            </DialogHeader>
+            <div className="p-4 bg-white rounded-lg flex items-center justify-center">
+              <QRCode value={cardData.website} size={256} />
+            </div>
+            <p className="text-center text-muted-foreground text-sm">{cardData.website}</p>
+          </DialogContent>
+        </Dialog>
+        
         <div className="w-full max-w-sm mx-auto space-y-4">
           <h3 className="text-center font-headline text-lg">{t('companyLocation')}</h3>
           <div className="aspect-video rounded-lg overflow-hidden border">
