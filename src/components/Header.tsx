@@ -3,18 +3,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User, HardDrive, Menu, LogOut, Languages, UserPlus } from 'lucide-react';
+import { User, HardDrive, LogOut, Languages, UserPlus } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { cn } from '@/lib/utils';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
 import { Button } from './ui/button';
-import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
   DropdownMenu,
@@ -26,7 +18,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useTranslation } from '@/hooks/use-translation';
-import { Separator } from './ui/separator';
 
 
 const LanguageSwitcher = () => {
@@ -53,9 +44,8 @@ const LanguageSwitcher = () => {
 
 export default function Header() {
   const pathname = usePathname();
-  const [isSheetOpen, setSheetOpen] = useState(false);
   const { user, logout, addAnotherAccount } = useAuth();
-  const { t, setLanguage, language } = useTranslation();
+  const { t } = useTranslation();
 
   const navItems = [
     { href: '/', label: t('myCard'), icon: User },
@@ -71,13 +61,12 @@ export default function Header() {
     return name[0];
   }
 
-  const NavLinks = ({isMobile = false}: {isMobile?: boolean}) => (
-     <nav className={cn("flex items-center gap-2", isMobile ? "flex-col items-start w-full" : "")}>
+  const NavLinks = () => (
+     <nav className="flex items-center gap-2">
       {navItems.map((item) => (
         <Link
           key={item.href}
           href={item.href}
-          onClick={() => setSheetOpen(false)}
           className={cn(
             'flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
             pathname === item.href
@@ -92,56 +81,8 @@ export default function Header() {
     </nav>
   )
   
-  const UserProfile = ({ isMobile = false }: { isMobile?: boolean }) => {
+  const UserProfile = () => {
     if (!user) return null;
-
-    if (isMobile) {
-      return (
-        <div className="flex flex-col w-full gap-2">
-          <div className="flex items-center gap-3 px-2 py-1.5">
-             <Avatar className="h-9 w-9">
-                <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
-                <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-              <p className="text-sm font-medium leading-none">{user.displayName}</p>
-              <p className="text-xs leading-none text-muted-foreground">
-                {user.email}
-              </p>
-            </div>
-          </div>
-          <Separator />
-          
-          <div className="flex flex-col w-full text-sm font-normal">
-            <button
-                onClick={() => { setLanguage('en'); setSheetOpen(false); }}
-                className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-            >
-                <Languages className="mr-2 h-4 w-4" />
-                <span>English</span>
-                {language === 'en' && <span className="ml-auto">✔</span>}
-            </button>
-            <button
-                onClick={() => { setLanguage('zh'); setSheetOpen(false); }}
-                className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-            >
-                 <Languages className="mr-2 h-4 w-4" />
-                <span>繁體中文</span>
-                {language === 'zh' && <span className="ml-auto">✔</span>}
-            </button>
-          </div>
-          <Separator/>
-          <Button variant="ghost" onClick={() => { addAnotherAccount(); setSheetOpen(false); }} className="w-full justify-start px-2 py-1.5 text-sm font-normal">
-            <UserPlus className="mr-2 h-4 w-4" />
-            <span>{t('addAnotherAccount')}</span>
-          </Button>
-          <Button variant="ghost" onClick={() => { logout(); setSheetOpen(false); }} className="w-full justify-start px-2 py-1.5 text-sm font-normal">
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>{t('logOut')}</span>
-          </Button>
-        </div>
-      )
-    }
 
     return (
        <DropdownMenu>
@@ -189,35 +130,7 @@ export default function Header() {
             </div>
         </div>
         
-        <div className="flex items-center gap-2 md:hidden">
-            <Sheet open={isSheetOpen} onOpenChange={setSheetOpen}>
-              <SheetTrigger asChild>
-                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || 'User'} />
-                    <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[240px] p-0">
-                <SheetHeader className="p-4 border-b">
-                   <Link href="/" className="flex items-center gap-2" onClick={() => setSheetOpen(false)}>
-                    <Logo className="h-8 w-8" />
-                    <span className="font-headline text-xl font-bold">BizCard</span>
-                  </Link>
-                   <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
-                </SheetHeader>
-                <div className="p-4 flex flex-col gap-4">
-                  <UserProfile isMobile={true}/>
-                  <Separator />
-                  <NavLinks isMobile={true} />
-                </div>
-              </SheetContent>
-            </Sheet>
-        </div>
-
-        <div className="hidden md:flex items-center gap-4">
-          <div className="flex-grow" />
+        <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <UserProfile />
         </div>
